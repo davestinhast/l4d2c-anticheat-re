@@ -41,7 +41,8 @@ main.(*HpP4qwz).Startup.ZrMEw4hJW.func62  — goroutine 62
 main.(*HpP4qwz).Startup.ZrMEw4hJW.func75  — goroutine 75
 ```
 
-Las 75 goroutines de Startup son probablemente:
+Las 75+ goroutines de Startup son probablemente (README.md indica 87 goroutines totales en startup,
+incluyendo las del runtime de Go y Wails):
 - Inicialización de blacklists (ventanas, procesos, herramientas RE)
 - Setup de hooks de Windows APIs
 - Inicialización de WMI (COM objects)
@@ -121,7 +122,7 @@ StartL4D2()
 
 | Paquete (garbled) | Rol identificado |
 |-------------------|-----------------|
-| `dUgTofmw` | Motor de detección principal (30+ funciones, 12 init) |
+| `dUgTofmw` | Motor de detección principal (67 funciones, 12 init, ga4oovjHCfg con 37 closures) |
 | `_6di6zc0se2v` | WatchList — vigilancia continua de procesos y ventanas |
 | `HWARRxN` | Constructor de HWID (`KbBU6bdOa.Build`) |
 | `sNAkh4` | Monitoreo de proceso via gopsutil (CPU, RAM, cmdline, env) |
@@ -214,6 +215,19 @@ Las goroutines de Go se recuperan de panics independientemente. Si se puede hace
 
 ---
 
+## Resumen de Goroutines del Motor de Detección
+
+| Función | Goroutines directas | Sub-goroutines | Total closures |
+|---------|-------------------|----------------|----------------|
+| `dUgTofmw.ga4oovjHCfg` | 33 (func1-func33) | 4 (func9.1, func12.1, func21.1, func28.1) | **37** |
+| `dUgTofmw.VA0jJhHuwb0l` | — | 3 anidadas | 3 |
+| **Total motor dUgTofmw** | | | **40+** |
+
+**Nota:** El README.md original indicaba "34 goroutines" para ga4oovjHCfg — la extracción
+del `pclntab` confirma que el conteo correcto es **37 closures**.
+
+---
+
 ## Encontrar Boundaries de Goroutines en Ghidra
 
 Los spawns de goroutines son llamadas a `runtime.newproc`:
@@ -229,3 +243,5 @@ call runtime.newproc               ; lanzar goroutine
 Buscar llamadas a `runtime.newproc` en:
 - `main.(*HpP4qwz).ConnectL4D2Server` → goroutines de detección
 - `main.(*HpP4qwz).StartL4D2` → goroutines de monitoreo del juego
+- `dUgTofmw.ga4oovjHCfg` → buscar exactamente 33 llamadas a `runtime.newproc` (las 4
+  sub-goroutines `.1` son `runtime.newproc` dentro de las goroutines func9/12/21/28)

@@ -73,6 +73,9 @@ La identificación se realizó por análisis de métodos, campos y comportamient
 | `AFdc2Qd` | Operaciones de big number | `crypto/big` o similar |
 | `aOD4q1Y` | Protobuf registry/descriptor | Registro de tipos proto |
 | `Ve0nLKBMzmC` | `github.com/go-playground/validator/v10` | `(*adPnywIlKf75)`: Field, GetTag, ExtractType, Param, Parent, Top, ReportError, ReportValidationErrors, Validator |
+| `ncRaYk_Ke` | Desconocido — paquete propio del AC | Identificado en pclntab; funciones no listadas aún; posiblemente el sistema de logging/reporting interno |
+| `bmV09O0` | Protobuf interno | Encontrado en contexto de serialización protobuf; posiblemente `google.golang.org/protobuf/internal` |
+| `fcje4l4dl_uV` | Tipo del pipeline productor-consumidor de dUgTofmw | Método `Feed` identificado — recibe datos de goroutines productoras |
 
 ---
 
@@ -126,7 +129,7 @@ La presencia de ambos métodos de streaming sugiere al menos un método bidirecc
 | `main.(*HpP4qwz).StartL4D2` | 5 goroutines | Lanzar juego, monitor, DLL watch, screenshots |
 | `main.(*HpP4qwz).FrontendReady` | 13+ goroutines | Inicialización de la UI y eventos |
 | `main.(*HpP4qwz).BeforeClose` | 4+ goroutines | Cleanup al cerrar |
-| `dUgTofmw.ga4oovjHCfg` | 34 goroutines (31 + 3 sub) | Motor de detección principal con 31 checks paralelos |
+| `dUgTofmw.ga4oovjHCfg` | 37 closures (33 goroutines + 4 sub-goroutines anidadas) | Motor de detección principal con 33 checks paralelos — confirmado por extracción de pclntab |
 | `dUgTofmw.VA0jJhHuwb0l` | 3 goroutines | Sub-sistema de detección |
 
 **Total estimado de goroutines en ejecución:** 150+ goroutines concurrentes durante el monitoreo activo.

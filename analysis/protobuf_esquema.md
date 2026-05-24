@@ -331,6 +331,45 @@ width       height      physicalSize
 
 ---
 
+## Campos Adicionales — Tabla de Tipos del Runtime Go
+
+Estos campos fueron encontrados en la tabla de tipos del binario Go (offset ~29505000–29530000).
+Son nombres de campos exportados que sobrevivieron garble porque Go los embebe para reflexión/JSON/protobuf.
+Representan campos en mensajes protobuf del AC que no fueron capturados por las anotaciones `protobuf:"..."`.
+
+### Campos Confirmados Adicionales
+
+| Campo | Mensaje probable | Descripción |
+|-------|-----------------|-------------|
+| `Caught` | BEt_icchsrxy o mensaje de reporte | Detección positiva — jugador "atrapado" |
+| `Active` | Mensaje de estado de sesión | Sesión/componente activo |
+| `AddonsExtern` | BEt_icchsrxy | Addons externos no verificados por el servidor |
+| `NumberHeight` | Mensaje de captura de pantalla | Alto de la captura en píxeles |
+| `Width` | Mensaje de captura de pantalla | Ancho de la captura en píxeles |
+| `Cores` | ENOV9d o sub-mensaje CPU | Núcleos de CPU (Win32_Processor.NumberOfCores) |
+| `OSInfo` | ENOV9d o HWInfo | Info completa del SO como struct embebido |
+| `HWInfo` | BEt_icchsrxy.HWData | Wrapper del HWID completo |
+| `GPUInfo` | ENOV9d.GPU | Info de GPU como struct (alias de BlhNU1RKfjg) |
+| `SubCpu` | ENOV9d o mensaje de CPU | Sub-componente de CPU (por núcleo o socket) |
+| `EntityEngine` | Motor interno | Motor de entidades del juego — struct del detector |
+| `UseH2` | Config de conexión | Flag de HTTP/2 para la conexión gRPC |
+| `Product` | Mensaje de detección | Nombre del producto/cheat detectado |
+| `Audio` | HWID o ExtraInfo | Info de dispositivo de audio — posible vector HWID adicional |
+
+### Tipos Struct del AC (no son mensajes protobuf, sino tipos Go internos)
+
+| Tipo | Rol |
+|------|-----|
+| `OSInfo` | Struct Go que agrega la info del SO antes de serializar a protobuf |
+| `HWInfo` | Struct Go que encapsula `ENOV9d` antes de serializar |
+| `GPUInfo` | Struct Go para GPU (probablemente wrappea `BlhNU1RKfjg`) |
+| `SubCpu` | Struct Go para sub-componente de CPU |
+| `EntityEngine` | Motor interno de detección de entidades |
+| `BannedWriter` | HTTP writer personalizado para respuestas de ban del servidor gRPC |
+| `RequestBlocked` | Struct para requests bloqueados |
+
+---
+
 ## Sistema de Tokens (BEwVDQOh5)
 
 El paquete `BEwVDQOh5` maneja la generación y ciclo de vida de los tokens de auth:

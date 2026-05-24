@@ -8,31 +8,55 @@ identificadas y 12 goroutines de inicialización.
 
 ## Funciones Principales
 
-### ga4oovjHCfg — Lanzador de Goroutines de Detección (33 sub-funciones)
+### ga4oovjHCfg — Lanzador de Goroutines de Detección (37 closures totales)
 
-La función más grande del paquete. Sus 33 goroutines paralelas (`func1` a `func33`)
-representan el núcleo del sistema de detección concurrente.
+La función más grande del paquete. Lanza **33 goroutines paralelas** (`func1` a `func33`)
+más **4 sub-goroutines anidadas** — confirmado por extracción directa del `pclntab` del binario.
+
+**Conteo exacto (confirmado por pclntab):**
+- `func1` a `func33` → 33 goroutines de detección paralela
+- `func9.1`, `func12.1`, `func21.1`, `func28.1` → 4 sub-goroutines anidadas
+- **Total: 37 closures**
 
 ```
-dUgTofmw.ga4oovjHCfg         — función principal (dispatcher)
-dUgTofmw.ga4oovjHCfg.func1   — goroutine 1
-dUgTofmw.ga4oovjHCfg.func2   — goroutine 2
+dUgTofmw.ga4oovjHCfg          — función principal (dispatcher)
+dUgTofmw.ga4oovjHCfg.func1    — goroutine 1
+dUgTofmw.ga4oovjHCfg.func2    — goroutine 2
 ...
-dUgTofmw.ga4oovjHCfg.func9   — goroutine 9
-dUgTofmw.ga4oovjHCfg.func9.1 — sub-goroutine de func9
-dUgTofmw.ga4oovjHCfg.func12  — goroutine 12
-dUgTofmw.ga4oovjHCfg.func12.1— sub-goroutine de func12
+dUgTofmw.ga4oovjHCfg.func9    — goroutine 9
+dUgTofmw.ga4oovjHCfg.func9.1  — sub-goroutine de func9 (reporte/acción)
+dUgTofmw.ga4oovjHCfg.func10   — goroutine 10
+dUgTofmw.ga4oovjHCfg.func11   — goroutine 11
+dUgTofmw.ga4oovjHCfg.func12   — goroutine 12
+dUgTofmw.ga4oovjHCfg.func12.1 — sub-goroutine de func12 (reporte/acción)
 ...
-dUgTofmw.ga4oovjHCfg.func21  — goroutine 21
-dUgTofmw.ga4oovjHCfg.func21.1— sub-goroutine de func21
-dUgTofmw.ga4oovjHCfg.func28  — goroutine 28
-dUgTofmw.ga4oovjHCfg.func28.1— sub-goroutine de func28
-dUgTofmw.ga4oovjHCfg.func33  — goroutine 33
+dUgTofmw.ga4oovjHCfg.func21   — goroutine 21
+dUgTofmw.ga4oovjHCfg.func21.1 — sub-goroutine de func21 (reporte/acción)
+...
+dUgTofmw.ga4oovjHCfg.func28   — goroutine 28
+dUgTofmw.ga4oovjHCfg.func28.1 — sub-goroutine de func28 (reporte/acción)
+dUgTofmw.ga4oovjHCfg.func29   — goroutine 29
+...
+dUgTofmw.ga4oovjHCfg.func33   — goroutine 33
 ```
 
-La presencia de sub-goroutines anidadas (`.1`) en algunas goroutines indica
-detección en dos niveles: la goroutine principal detecta una categoría de amenaza,
-y la sub-goroutine maneja el reporte o acción resultante.
+Las 4 sub-goroutines anidadas (`.1`) están en goroutines específicas (9, 12, 21, 28),
+lo que sugiere que esas 4 goroutines de detección son las que tienen lógica de dos fases:
+la goroutine principal detecta, y la sub-goroutine ejecuta la acción resultante
+(reporte al servidor, screenshot, desconexión).
+
+### Patrón Productor-Consumidor — (*fcje4l4dl_uV).Feed
+
+El motor de detección usa un patrón productor-consumidor identificado por el método `Feed`:
+
+```
+dUgTofmw.(*fcje4l4dl_uV).Feed   — método que alimenta datos al motor de detección
+```
+
+`fcje4l4dl_uV` es el tipo del motor/pipeline. El método `Feed` recibe datos de las
+goroutines productoras (escaneo de ventanas, procesos, memoria) y los pasa a las
+goroutines consumidoras (análisis, reporte). Este patrón explica por qué algunas
+goroutines tienen sub-goroutines anidadas — la principal produce, la anidada consume.
 
 ### CGRKkahhRkP — Handler de Reportes / Heartbeat (12 sub-funciones + deferwrap)
 
