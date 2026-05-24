@@ -83,20 +83,34 @@ EncodeToken          — codificar auth token
 DecryptTicket        — desencriptar ticket del servidor
 EncryptTicket        — encriptar ticket para envío
 ReportError          — reportar error al servidor
-ReportZombies        — reporte de estado de zombies (game state validation)
-ReportZerolen        — reporte de longitud cero (posible detección de manipulación)
-ReportValidationErrors — reporte de errores de validación
 ```
 
 ---
 
-## ReportZombies y Validación de Estado
+## Corrección: Funciones Mal Atribuidas al AC
 
-`ReportZombies` y `ReportZerolen` son funciones de reporte que van más allá del escaneo de memoria. Sugieren que el AC valida el estado interno del juego:
+En el análisis inicial las siguientes funciones fueron incorrectamente atribuidas al AC.
+Son en realidad parte de librerías Go estándar:
 
-- `ReportZombies` — valida que el estado de los zombies en la simulación es coherente
-- `ReportZerolen` — detecta paquetes o datos de longitud cero (posible anti-speedhack o validación de netcode)
-- `ReportValidationErrors` — errores genéricos de validación del estado del juego
+| Función | Paquete Real | Propósito Real |
+|---------|-------------|----------------|
+| `reportZombies` | `runtime` (GC de Go) | Reportar memory spans "zombie" al garbage collector |
+| `ReportZerolen` / `IsZerolen` / `LastKnown` | `OwbnEHL7gtm` = librería 802.11/gopacket | Análisis de tramas WiFi 802.11 |
+| `Bandwidth` / `ShortGI` / `GuardInterval` / `MCSIndex` | `OwbnEHL7gtm` = librería 802.11 | Propiedades de tramas 802.11 |
+| `ReportError` / `ReportValidationErrors` | `Ve0nLKBMzmC` = `go-playground/validator` | Validación de structs Go |
+
+Estas NO son funciones del AC para reportar al servidor.
+
+### Paquetes Ahora Identificados Correctamente
+
+| Paquete Garbled | Librería Real | Evidencia |
+|-----------------|-------------|-----------|
+| `mTkHARFkg8` | `sync` (stdlib Go) | `(*HQHzZyeNDHQO).Add/Done/Wait` = WaitGroup |
+| `HQHzZyeNDHQO` | `sync.WaitGroup` | Métodos Add, Done, Wait confirmados |
+| `ev96n7K` | `sync.Mutex` | Métodos Lock, Unlock confirmados |
+| `Ve0nLKBMzmC` | `github.com/go-playground/validator/v10` | Métodos Field, GetTag, ExtractType, ReportError, Validator |
+| `OwbnEHL7gtm` | Librería 802.11/gopacket | Bandwidth, GuardInterval, ShortGI, MCSIndex, FECType |
+| `q7klgJ` | `encoding/json` (stdlib Go) | decFunc, DayNID (como tipo), HqQopxeAAae |
 
 ---
 
