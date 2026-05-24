@@ -73,9 +73,13 @@ La identificación se realizó por análisis de métodos, campos y comportamient
 | `AFdc2Qd` | Operaciones de big number | `crypto/big` o similar |
 | `aOD4q1Y` | Protobuf registry/descriptor | Registro de tipos proto |
 | `Ve0nLKBMzmC` | `github.com/go-playground/validator/v10` | `(*adPnywIlKf75)`: Field, GetTag, ExtractType, Param, Parent, Top, ReportError, ReportValidationErrors, Validator |
-| `ncRaYk_Ke` | Desconocido — paquete propio del AC | Identificado en pclntab; funciones no listadas aún; posiblemente el sistema de logging/reporting interno |
+| `ncRaYk_Ke` | **`regexp` o `regexp/syntax`** (stdlib Go) | `MatchRune` method identificado en tabla de tipos — `regexp/syntax.Inst.MatchRune` es el único método con ese nombre en stdlib. Funciones: `FS0IhhJL`, `MDfyjAe`, `RaR0kkqIl`, `MlPMSGX2GAB`, `Alav9s`, `T8Go8QdJaY`, `PJRLzfZ`. El AC compila regex para matching de blacklists |
 | `bmV09O0` | Protobuf interno | Encontrado en contexto de serialización protobuf; posiblemente `google.golang.org/protobuf/internal` |
 | `fcje4l4dl_uV` | Tipo del pipeline productor-consumidor de dUgTofmw | Método `Feed` identificado — recibe datos de goroutines productoras |
+| `bszAWJqu` | Paquete AC desconocido — posiblemente sistema de eventos/detección | Funciones: `FkjkBraZo` (15 closures + deferwrap), `IvOAAX` (aparece en FrontendReady context), `OYQujSa6Aed5`, `ApxFkk`, `X10KDNt6j`. Usa regexp (`ncRaYk_Ke`). Podría ser el sistema de escaneo de procesos/ventanas |
+| `d8a0oX50i` | Paquete con aritmética de big numbers | Aparece junto a `math/big.PhCJi5OjhM2` en pclntab. Funciones: `ZhDr99uMy`, `QqEcxnsa`, `FLPyhrKfoTu`. Probablemente crypto: generación de tokens o HMAC usando `math/big` |
+| `Plcr2cx` | Paquete adyacente a d8a0oX50i | Funciones: `CgWgrWQ`, `rHQg4df6V`, `hEQiyR8`. Posiblemente manejo de claves o certificados |
+| `i7OyDUpCDA3q` | Paquete inlined en main.QSUMsCa | Función `D5UnAj` identificada; aparece entre funciones de ncRaYk_Ke sugiriendo que es un helper de matching o comparación |
 
 ---
 
