@@ -254,6 +254,74 @@ nombres fueron garbled pero cuyas funciones están inlined en los packages princ
 
 ---
 
+## Paquetes del Runtime de Go (NO garbled — runtime internals)
+
+Estos paquetes aparecen con sus nombres ORIGINALES en pclntab porque forman parte
+del runtime de Go y garble no los obfusca (hacerlo rompería la ejecución):
+
+| Paquete | Funciones | Observación |
+|---------|-----------|-------------|
+| `runtime` | **1594** — el paquete MÁS GRANDE del binario | `_defer`, `_func`, `_panic`, `_typePair` = internals del scheduler Go. Gestiona goroutines, GC, stacks, defer, panic. No garbled por necesidad del runtime |
+| `reflect` | **634** | `aAhNyM` = `reflect.rtype` (Align, ArrayType, ChanDir, Common, ExportedMethods). Reflexión de tipos Go. Parcialmente garbled en tipo-tabla pero el paquete aparece sin garble |
+| `syscall` | **599** | `BI7j6lzjkgw.Sockaddr` = `syscall.Sockaddr`; `FnICOY.Continued/CoreDump/Exited` = `syscall.WaitStatus` (métodos ungarbled!). Wrapper de syscalls de Windows |
+| `sync` | **51** | `Cond.Wait` (ungarbled!); `ev96n7K.Lock/Unlock` (mismos tipos garbled del sync de usuario). Versión runtime-interna de sync usada por el scheduler |
+| `math` | **32** | `Abs` = `math.Abs` (ungarbled!). Funciones matemáticas básicas. La mayoría de funciones están garbled pero el package name no |
+
+---
+
+## Paquetes Pendientes / Parcialmente Identificados
+
+Estos paquetes existen en el binario pero NO han sido completamente identificados.
+Pueden ser paquetes custom del AC, sub-paquetes de librerías ya documentadas, o
+librerías de terceros menos conocidas.
+
+### Potencialmente Identificados (requieren confirmación)
+
+| Paquete | Funciones | Identificación Probable | Evidencia |
+|---------|-----------|------------------------|-----------|
+| `PkUgQB64wN09` | 54 | **`filippo.io/nistec`** o `x/crypto/internal/nistec` | `AgFtY5`: Add, Double, IsOnCurve, Params, ECDH, Equal — API exacta de curva ECDH NIST |
+| `hRyHlb` | 186 | **`golang.org/x/text/internal/number`** | `eovpeu7y`: Assign, Round, RoundDown, RoundedInteger — formatting de números con redondeo |
+| `anGbYY2EWPw` | 305 | **Protobuf sub-paquete** (filedesc o proto/protoapi) | `HEGKR0lOPr3.Parent` = descriptor.Parent() — protoreflect interface method |
+| `g7rfSp_eNaON` | 60 | **Buffer wrapper custom** | `ITLFV1h`: Available, AvailableBuffer, Bytes, Cap = métodos de bytes.Buffer; `ZzwM9pnBD_j` = función auxiliar |
+| `saxLnjfOw` | 158 | Desconocido — paquete AC custom grande | Todo garbled, no hay métodos preservados |
+| `I2I3kG0xgKU` | 34 | Desconocido | Todo garbled |
+| `bCDs2NME30rs` | 42 | Desconocido — posiblemente crypto o network | `aiCAsEN4qhLQ` con múltiples métodos garbled |
+
+### Paquetes Muy Pequeños (difíciles de identificar sin análisis dinámico)
+
+| Paquete | Funciones | Observación |
+|---------|-----------|-------------|
+| `GtN_WZiIQ` | 14 | Error types: `dpN7za.Error/Unwrap`, `EKV_aagFA.Error` |
+| `msvCchDB` | 23 | 10 init closures con sub-closures |
+| `h7lxVr` | 27 | Métodos garbled, custom package |
+| `BdDIRo5Tv42` | 12 | 10 init closures = posibles detection registrations |
+| `Ga7B40suNkY` | 8 | 4 init closures |
+| `BSjj4d` | 5 | 4 init closures |
+| `F5ImErztW` | 6 | deferwrap1 = COM release probable |
+| `b_hDwUv` | 5 | 3 init closures |
+| `OBYSp0KPBjBZ` | 4 | `VyE6_84BwI` con 3 métodos garbled |
+| `DqYZI2` | 3 | Micro-paquete, 2 funciones libres |
+| `AnGoYbf` | 2 | Micro-paquete stub |
+| `x_znjuZe` | 3 | Micro-paquete, 2 funciones libres |
+| `XsrsAJ7` | 6 | 4 init closures |
+| `OeqkvWSN2RR` | 40+ | Funciones garbled, medium package |
+| `D3c7OwSvpJ` | 33 | `Btf9ew8En.IsValid` — type con IsValid |
+
+### Estadísticas Finales del Censo
+
+| Categoría | Paquetes |
+|-----------|---------|
+| Paquetes del AC (código propio) | ~15 |
+| Firmas de detección estáticas | 5 (778 firmas total) |
+| Stdlib garbled | ~50 |
+| Stdlib sin garble (runtime) | 5 |
+| Terceros identificados | ~45 |
+| Wails/UI packages | ~15 |
+| Pendientes/no identificados | ~28 |
+| **TOTAL** | **183** |
+
+---
+
 ## Structs Protobuf del AC (P4mAKk) — Mapa Completo
 
 | Struct Garbled | Propósito | Campos Principales |
