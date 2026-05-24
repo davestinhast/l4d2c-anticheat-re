@@ -15,9 +15,10 @@ paquete de detección adicional `er9_yp`.
 | `WGfDxX0zz2M` | Registro estático firmas | **117** | Paquete de firmas 3 |
 | `YCJ5PUz_M` | Registro estático firmas | **116** | Paquete de firmas 4 |
 | `kNpc1A53` | Registro estático firmas | **84** | Paquete de firmas 5 |
+| `BdDIRo5Tv42` | Probable 6to registro de firmas | **~10** | 10 init closures + 1 sub-closure |
 | `er9_yp` | Detección AC custom | **18** init closures | Strings cifrados, detección especializada |
 | `pdFrspK_G.hlavBkMcO` | Motor de detección directo | **644** closures | Checks hardcodeados en la función principal |
-| **TOTAL** | | **~1440** | Detecciones individuales combinadas |
+| **TOTAL** | | **~1450** | Detecciones individuales combinadas |
 
 ---
 
@@ -125,6 +126,94 @@ ra_94HIlnc6.init
 - Adyacente a `Moh1QXpPW` (Wails Events) en pclntab
 - Las firmas sin sub-closures sugieren que son patrones de bytes simples
   (sin wildcards ni lógica de multi-match)
+
+---
+
+## Paquete BdDIRo5Tv42 — ~10 Firmas Adicionales
+
+**Estructura:**
+- 10 closures `init.func1` ... `init.func10`
+- `init.func10.1` = sub-closure en la última firma (lógica multi-paso)
+- Sin decFunc, sin tipos propios, sin funciones no-init
+
+**Características:**
+- Solo closures de init — patrón idéntico a `kNpc1A53`
+- El más pequeño de los paquetes de firmas confirmados
+- La sub-closure en `func10.1` indica que al menos una firma usa matching
+  de múltiples condiciones (similar a las sub-closures de `WGfDxX0zz2M`)
+
+---
+
+## Paquete w0bqp0RaeD — Módulo de Detección Activa (125 funciones)
+
+Este paquete es cualitativamente diferente a los demás registros de firmas —
+no solo registra patrones sino que ejecuta **detección activa con goroutines**
+propio. Es el paquete de detección más complejo del AC, inmediatamente antes de `main`.
+
+**Estructura completa de TnC04uk4:**
+```
+w0bqp0RaeD.TnC04uk4 (función orquestadora principal)
+├── func1 + func1.1      → primer scan (con sub-lógica)
+├── func2                → segundo scan
+├── func3                → tercer scan
+├── func4 + func4.1      → cuarto scan (con sub-lógica)
+├── func5 + func5.1      → quinto scan (con sub-lógica)
+├── func6 [COMPLEJA]     → orquestador de goroutines
+│   ├── dhCJhjGa         → función nombrada interna (análisis de resultado)
+│   ├── func6.1 + func6.1.1
+│   ├── func6.2
+│   ├── func6.3 + func6.3.1
+│   ├── func6.4
+│   ├── func6.5
+│   ├── func6.6 + func6.6.1
+│   ├── func6.7 + func6.7.1
+│   ├── func6.8 + func6.8.1
+│   ├── func6.9 + func6.9.1
+│   ├── func6.10 ~ func6.15   → closures de procesamiento
+│   ├── func6.dhCJhjGa.16     → closure final de dhCJhjGa
+│   ├── func6.gowrap1         ← goroutine 1
+│   ├── func6.gowrap2         ← goroutine 2
+│   ├── func6.gowrap3         ← goroutine 3
+│   ├── func6.gowrap4         ← goroutine 4
+│   ├── func6.gowrap5         ← goroutine 5
+│   └── func6.gowrap6         ← goroutine 6
+├── func7
+└── func8
+```
+
+**Otras funciones de detección:**
+| Función | Closures | Descripción |
+|---------|----------|-------------|
+| `TnC04uk4` | func1-8 + func6.* | Orquestador principal — 6 goroutines |
+| `QKaVdXPL` | 8 closures + deferwrap1 | Scanner con 8 etapas + cleanup de recurso |
+| `aiV8LM9eoaot` | 5 closures (func1-4, func4.1) | Scanner de 5 pasos |
+| `bxCiu5XSx1` | 5 closures | Scanner de 5 pasos |
+| `OY6DwAo` | 5 closures | Scanner de 5 pasos |
+| `F9SUnlRNJ` | 4 closures | Scanner de 4 pasos |
+| `ugEeRXqA` | 4 closures + deferwrap1 | Scanner con cleanup |
+| `wrBVrQ` | 4 closures (func1-2.1, func2, func3) | Scanner multi-etapa |
+| `V65onxa3a` | 3 closures | |
+| `YxgPBvwS` | 3 closures | |
+| `GomyLb` | 2 closures (func1, func1.1) | |
+
+**Funciones con deferwrap (manejo de recursos del SO):**
+- `QKaVdXPL.deferwrap1`, `QwD77pJ6RN.deferwrap1`, `ugEeRXqA.deferwrap1`
+- `PHkNuSrB_TI.deferwrap1`, `xqXiqnUJ.deferwrap1/2`
+= al menos **6 recursos del SO** adquiridos y liberados durante la detección
+
+**Tipos comparables usados como map keys:**
+- `RIpbVXrKn` y `O1pxFVY` = structs de datos de detección indexados
+
+**Sin `decFunc`** → los strings que usa son cleartext y podrían ser identificados
+con análisis estático apuntando a las funciones `TnC04uk4`, `QKaVdXPL` etc.
+
+**Hipótesis del propósito:**
+Dado su tamaño (125 funcs), complejidad (6 goroutines en func6), 6 recursos del SO,
+y posición justo antes de `main` — este paquete probablemente implementa:
+1. Monitoreo del estado del proceso del juego en tiempo real
+2. Detección de modificaciones de memoria en hooks del sistema (detectable sin firewall)
+3. Scans de integridad de archivos del juego
+4. Detección de herramientas de debugging activas (via NtQueryInformationProcess o similar)
 
 ---
 
@@ -315,10 +404,12 @@ pdFrspK_G.hlavBkMcO (función principal)
 | Componente | Checks | Observaciones |
 |------------|--------|---------------|
 | Firmas estáticas (5 paquetes) | 778 | Registradas en init(), ejecutadas en runtime |
+| BdDIRo5Tv42 (probable 6to paquete) | ~10 | 10 init closures |
 | er9_yp (cifradas) | ~18 | Strings cifrados, naturaleza desconocida |
 | hlavBkMcO closures | 644 | Hardcodeados, sin registro previo |
 | Blacklist entries | ~62 | 4 listas (BL1-BL4) |
+| w0bqp0RaeD scanner activo | ~11 init + TnC04uk4 6 goroutines | Detección dinámica inmediatamente anterior a main |
 | Source Engine scanner | 1 función | 7 closures internos |
 | VPK scanner | 1 patrón glob | + 2 regexes especiales |
 | Firmas del servidor | Variable | W99qYP.Pattern, actualizables |
-| **TOTAL ESTÁTICO** | **~1502** | Checks sin contar firmas del servidor |
+| **TOTAL ESTÁTICO** | **~1523** | Checks sin contar firmas del servidor |
