@@ -10,9 +10,9 @@ La identificación se realizó por análisis de métodos, campos y comportamient
 | Paquete Garbled | Descripción | Evidencia |
 |-----------------|-------------|-----------|
 | `main.(*HpP4qwz)` | Struct principal de la app Wails | Métodos: Startup, FrontendReady, StartL4D2, ConnectL4D2Server, BeforeClose |
-| `dUgTofmw` | Motor de detección principal | 67 funciones, `ga4oovjHCfg` lanza 34 goroutines de detección |
-| `HWARRxN` | **`google.golang.org/protobuf/internal/filedesc`** — descriptor de archivo protobuf | `KbBU6bdOa.Build` = `filedesc.Builder.Build()`, `(*SLltHXdFZqty)` = FileDescriptor, `(*Yye7gKrP5)` = ServiceDescriptor (tiene `Methods()`), `(*WPaeyWXKC3et)` = MethodDescriptor (`Input`, `Output`, `IsStreamingClient`, `IsStreamingServer`), `(*Cv4Csm)` = MessageDescriptor, `(*TvQBJqp99aCj)` = FieldDescriptor |
-| `bszAWJqu` | **Subsistema de escaneo de blacklists** — escanea procesos, ventanas, módulos | 12 funciones top-level, usa 4 patrones regex compilados (uno por blacklist), funciones: `ThNOEr`, `OYQujSa6Aed5`, `FkjkBraZo`, `IvOAAX`, `ApxFkk`, `X10KDNt6j`, `LUb2wVKw`, `PlRmoX6cuU`, `CGKuSNjp`, `JnwG33U`, `E5nzMUH5qSwM`, `X80N6Rs52TTi` |
+| `dUgTofmw` | **Motor de evaluación central** — el paquete más grande del AC | **308 funciones**. Tipos: `(*fcje4l4dl_uV)` (Feed pipeline), `(*ZhEEW_uzlNn)` (evaluador con `h7MNIMO` de 8 etapas), `(*gZDPQlzEDoPS)` (error). Funciones críticas: `ga4oovjHCfg` (33 closures = scanner principal), `ZXugk2GxaotX` (14 closures), `KT300841` (17 closures), `CGRKkahhRkP` (12 closures = handler gRPC). 13 init funcs = 13 tipos de evento registrados. Ver `evaluador_central.md` |
+| `HWARRxN` | **`google.golang.org/protobuf/internal/impl`** — runtime de mensajes protobuf | 550+ funciones. `(*KbBU6bdOa)` = `impl.MessageInfo` (Build, thSKtfSax3, _h76SfBr); `(*SLltHXdFZqty)` = FileDescriptor (ParentFile); `(*Yye7gKrP5)` = ServiceDescriptor; `(*WPaeyWXKC3et)` = MethodDescriptor (Input, Output, IsStreamingClient, IsStreamingServer); `(*Cv4Csm)` = MessageDescriptor (Enums, ExtensionRanges, de7YgkRNu); `(*As98DipdeM)` = FieldDescriptor (ByJSONName, ByName, ByNumber, ByTextName, Format, Get, Len, ProtoInternal); `(*G4Hq6JI)` = EnumDescriptor. **NOTA:** `KbBU6bdOa.Build` NO es HWID builder — es `MessageInfo.Build()` del runtime protobuf. El HWID collector real está en `asYMlWeBL6f6` |
+| `bszAWJqu` | **Scanner de blacklists** — 5 scanners paralelos de ventanas/procesos/DLLs/archivos/red | **120 funciones**. 5 scanners: `FkjkBraZo` (ventanas/EnumWindows), `JnwG33U` (procesos/Toolhelp32), `PlRmoX6cuU` (módulos DLL/Module32Next), `X10KDNt6j` (archivos), `X80N6Rs52TTi` (red). Cada scanner aplica los 5 regexes de `ncRaYk_Ke` (Alav9s, IvOAAX, MlPMSGX2GAB, PJRLzfZ, T8Go8QdJaY). Auxiliares: `ThNOEr`, `OYQujSa6Aed5`, `LUb2wVKw`, `ApxFkk`, `CGKuSNjp`, `E5nzMUH5qSwM`, `IvOAAX`. Ver `scanner_blacklist.md` |
 | `P4mAKk` | **Paquete de mensajes Protobuf del AC** | 16 tipos de mensaje con getters completos. Ver tabla completa en sección `Structs Protobuf` y `protocolo_protobuf.md`. Principales: `BEt_icchsrxy` (auth request), `ENOV9d` (HWID), `Qi1Z8I` (ban response), `H1oahxz1l3iY` (server response con CheatSigs), `W99qYP` (cheat signature con Pattern de bytes) |
 | `x1JPPahi` | Contenedor de tipos de detección | Contiene ENOV9d, BiK8wj, W99qYP, Qi1Z8I, etc. |
 | `_6di6zc0se2v` | WatchList — vigilancia continua (= `sNAkh4` en type table) | 81 entradas en pclntab; tipos: `(*_o3YyW)` (manager), `(*GrRzvM2)` (nodo), `(*Rs0QF1nUdhgw)`, `(*UWzc59)` (colecciones Has/String); 5 init funcs = 5 categorías (ventanas, procesos, red, módulos, archivos); integra gopacket (`cd1Utgxh0`, `wqT1oO`, `encTsS0_`). Ver `watchlist.md` |
@@ -20,7 +20,7 @@ La identificación se realizó por análisis de métodos, campos y comportamient
 | `asYMlWeBL6f6` | Wrapper WMI (COM/DCOM) | 31 funciones init (func1-func24 con sub-closures), `WbemeDk0` = IWbemServices, `VDjfdjV` = enumerador WMI, `Aego3YEweIaU` = ExecQuery |
 | `A39Z4i` | Ejecutor de queries WMI (librería Go WMI) | `(*DdY6Bn3b).Query` (con 4 deferwrap = 4 COM releases), `(*GNMRXRX).Query` = enumerador de resultados, `(*GUxA0QN3).Error` = tipo error WMI, `iFCNfGrVm5L` = función interna COM (16 closures), `wn2lrXVC` = setup de conexión |
 | `sOAbtRgFLa6_` | Subsistema de detección adicional | 2 funciones principales: `GXErxuFMY9Z` (func1/2/3) y `UxvaZNFzHI` (func1-func5 + sub-closures) — patrón similar a bszAWJqu pero con menos complejidad |
-| `xzFpaM3Mq3` | Paquete de gran tamaño (identificación pendiente) | 219 entradas no-init; función principal `iwhm6fWm4v` con 23+ closures; funciones: `ABiXzt`, `BfwDhHJq`, `CNAkvgt8dgry`, `DM1MqBwF1h74`, `G5tsEmkSGyTb`, `Gm3UquW`; posiblemente gRPC stream handler o protocolo de red |
+| `xzFpaM3Mq3` | **`google.golang.org/grpc`** — cliente gRPC | 219 entradas. Strings confirmatorias en binario: `ClientStream`, `DialContext`, `Invoke`. Función principal `iwhm6fWm4v` (23 closures = bidirectional stream), `qd_m0I_QYkH7` (42 closures = conexión HTTP/2), `rKGI40jJGm` (42 closures = TLS handshake), `nL6NzEwvxPE` (27 closures = frame processor). Endpoint: `/auth` en `l4d2center.com:443` |
 
 ---
 
@@ -44,10 +44,10 @@ La identificación se realizó por análisis de métodos, campos y comportamient
 | Paquete Garbled | Paquete Real | Evidencia |
 |-----------------|-------------|-----------|
 | `i1aqCskEISkX` | `net/http` + `golang.org/x/net/http2` | HTTP/2 framer (WriteContinuation, WriteData, WriteHeaders, WriteSettings), HTTP transport (RoundTrip, CloseIdleConnections), Authenticate, BasicAuth, SetBasicAuth |
-| `gG7Vmb7` | Biblioteca de red UDP (300+ funciones) | Probablemente `github.com/pion/udp` o similar |
+| `gG7Vmb7` | **Transporte de red / biblioteca de captura** (452+ funciones) | Cross-referencia a `q4ajG0RM.Aa8DB2bIK66` (gopacket type). Con 452 funciones es el transporte de red más grande. Probablemente `github.com/google/gopacket/pcap` (pcap live capture) o `github.com/pion/sctp` (SCTP transport layer para DTLS) |
 | `hh58lo` | Structs de respuesta A2S (campos JSON) | Tipos: `*hh58lo.Phr6ow`, `*hh58lo.GV2qnv`, `*hh58lo.Ea9gTx`, `*hh58lo.BT1E5g`, `*hh58lo.FnICOY`; campos json:"VAC", json:"SteamID", json:"Name", json:"Game", json:"AppID" |
 | `HBJGtL` | **Cliente A2S Protocol** (implementación del protocolo Source Engine server query) | `(*Ns0npSNFWWqQ).QueryInfo` = A2S_INFO, `(*Ns0npSNFWWqQ).QueryPlayer` = A2S_PLAYER, `(*Ns0npSNFWWqQ).Close`, `(*JG00Xm6lG8)` = lector binario (ReadUint8/16/32/64/String/Float32), `(*XxIkaC9_)` = escritor binario (WriteBytes/WriteCString), 11 funciones init |
-| `eUmM3IpzIrV` | Struct de respuesta A2S | Contiene `eaDzRhPGHK7j` con campos de servidor Source Engine |
+| `eUmM3IpzIrV` | **Capa de conectividad de red** (manager de conexiones + DTLS) | **328 funciones**. Referencia a `qTnr3tOf4N.A0lMBv6KYzU_` (DTLS type) y `i1aqCskEISkX` (http2). Tipos complejos: `c4yDowusz` con `func(*c4yDowusz)` — struct con callback de conexión. Probablemente `github.com/pion/transport` o el connectivity layer de gRPC. **CORRECCIÓN:** Identificación previa como "A2S_INFO struct" era incorrecta — el package real de A2S structs es `hh58lo` |
 | `MyTTk7_I` | `crypto/tls` | `(*ExZca80).DecryptTicket/EncryptTicket/ResumptionState` = métodos de tls.SessionState |
 | `ExZca80` | `crypto/tls.SessionState` | DecryptTicket, EncryptTicket, ResumptionState |
 | `uL6SGHSpk` | **`crypto/x509/pkix`** — no x509 directamente | `(*JjZ1WNQA).FillFromRDNSequence/ToRDNSequence/String` = `pkix.Name`, `(*IBvuTjv).HasExpired` = `pkix.CertificateList.HasExpired` (verificación de CRL), `(*Ap8xj8SrB).String` = `pkix.AlgorithmIdentifier` |
@@ -175,19 +175,90 @@ La presencia de ambos métodos de streaming sugiere al menos un método bidirecc
 
 ---
 
-## Goroutines — Resumen
+## Paquetes del Main — Mapa Completo
+
+El paquete `main` tiene **169 funciones** distribuidas en los siguientes tipos y funciones:
+
+### Tipo Principal `(*HpP4qwz)` — Struct de la App Wails
+
+| Método | Closures | Descripción |
+|--------|----------|-------------|
+| `Startup` | 60 directas + `ZrMEw4hJW.func61-75` (15 adicionales) | Inicio completo del sistema. `ZrMEw4hJW` = goroutine de monitoreo continuo con 15 closures |
+| `FrontendReady` | 13+ closures | UI lista. Sub-goroutine: `IvOAAX.1` y `IvOAAX.1.1` |
+| `ConnectL4D2Server` | 4 closures | Conexión al servidor: auth, loop, handler, reportador |
+| `StartL4D2` | 4 closures + `func4.1` | Inicio del juego: lanzar, monitor módulos, screenshots, cleanup |
+| `BeforeClose` | 4 closures + `deferwrap1/2` | Cleanup al cerrar el AC |
+
+### Tipos Auxiliares en main
+
+| Tipo | Métodos | Descripción |
+|------|---------|-------------|
+| `(*fyBBzjy)` | `exsr9Q9`, `Replace` | Template replacer para UI — strings de la interfaz |
+| `(*ip4dz1)` | `s3WIwGIayRx` | Helper interno de inicialización |
+
+### Funciones Free en main
+
+| Función | Closures | Descripción |
+|---------|----------|-------------|
+| `QSUMsCa` | func1-6, `MDfyjAe.func7`, `RaR0kkqIl.func8`, gowrap1-4 | Scanner VPK/archivos con 4 goroutines (gowrap1-4) y 2 regex especiales |
+| `c5l5shUHY6XB` | func1 + gowrap1 + deferwrap1 | Probable función `main()` o lanzador principal |
+| `ZrMEw4hJW` | func61-75 (15 closures) | Goroutine de monitoreo continuo lanzada desde Startup |
+| `decFunc` | — | Descifrador de string literals de garble-literals |
+| `main` | — | Punto de entrada principal |
+| `jBzxLnQ2u` | — | Helper de inicialización |
+| `FLqUmcop` | func1 | Helper auxiliar |
+| `cmzj5vg7g` | — | Utilidad |
+
+### `ZrMEw4hJW` — Goroutine de Monitoreo Continuo
+
+La función `ZrMEw4hJW` aparece tanto como función standalone como subroutine de `Startup`:
+```
+main.(*HpP4qwz).Startup.ZrMEw4hJW.func61  ← goroutine 1
+main.(*HpP4qwz).Startup.ZrMEw4hJW.func62  ← goroutine 2
+...
+main.(*HpP4qwz).Startup.ZrMEw4hJW.func75  ← goroutine 15
+```
+Con 15 closures, esta goroutine probablemente maneja el **loop de heartbeat + checks periódicos** desde dentro de Startup.
+
+### `QSUMsCa` — Scanner VPK Detallado
+
+```
+QSUMsCa (función principal)
+├── func1, func1.1 — loop de archivos
+├── func2, func3   — análisis de VPK
+├── func4, func4.1 — hash y reporte
+├── func5, func6   — cleanup
+├── MDfyjAe.func7  — regex especial (blacklist VPK 1)
+├── RaR0kkqIl.func8 — regex especial (blacklist VPK 2)
+├── gowrap1        — goroutine 1 (scanner paralelo)
+├── gowrap2        — goroutine 2
+├── gowrap3        — goroutine 3
+└── gowrap4        — goroutine 4 (4 goroutines de escaneo paralelo)
+```
+
+---
+
+## Goroutines — Resumen Actualizado
 
 | Función | Goroutines | Propósito |
 |---------|------------|-----------|
-| `main.(*HpP4qwz).Startup` | 87 total (60 directas + 15 closure + 12 sub) | Inicialización completa del sistema |
-| `main.(*HpP4qwz).ConnectL4D2Server` | 4 goroutines principales | Auth, Config, Loop de detección, Handler |
-| `main.(*HpP4qwz).StartL4D2` | 5 goroutines | Lanzar juego, monitor, DLL watch, screenshots |
-| `main.(*HpP4qwz).FrontendReady` | 13+ goroutines | Inicialización de la UI y eventos |
-| `main.(*HpP4qwz).BeforeClose` | 4+ goroutines | Cleanup al cerrar |
-| `dUgTofmw.ga4oovjHCfg` | 37 closures (33 goroutines + 4 sub-goroutines anidadas) | Motor de detección principal con 33 checks paralelos — confirmado por extracción de pclntab |
-| `dUgTofmw.VA0jJhHuwb0l` | 3 goroutines | Sub-sistema de detección |
+| `main.(*HpP4qwz).Startup` | 60 directas + 15 (ZrMEw4hJW) = **75 total** | Inicialización completa del sistema |
+| `main.(*HpP4qwz).ConnectL4D2Server` | 4 goroutines | Auth, Config, Loop de detección, Handler de reporte |
+| `main.(*HpP4qwz).StartL4D2` | 4 closures + func4.1 | Lanzar juego, monitor DLLs, screenshots, cleanup |
+| `main.(*HpP4qwz).FrontendReady` | 13+ closures | UI lista, eventos de WebView, IvOAAX goroutine |
+| `main.(*HpP4qwz).BeforeClose` | 4 closures | Cleanup al cerrar |
+| `main.QSUMsCa` | 4 goroutines (gowrap1-4) | Scanner VPK paralelo |
+| `dUgTofmw.ga4oovjHCfg` | 33 closures | Motor de detección — scanner principal |
+| `dUgTofmw.KT300841` | gowrap1 | Goroutine de evaluación |
+| `dUgTofmw.JcCuAB7zH` | gowrap1 | Goroutine de reporte |
+| `bszAWJqu.FkjkBraZo` | 10 closures | Scanner ventanas |
+| `bszAWJqu.JnwG33U` | 10 closures | Scanner procesos |
+| `bszAWJqu.PlRmoX6cuU` | 10 closures | Scanner módulos DLL |
+| `bszAWJqu.X10KDNt6j` | 10 closures | Scanner archivos |
+| `bszAWJqu.X80N6Rs52TTi` | 9 closures | Scanner red |
+| `bszAWJqu.LUb2wVKw` | gowrap1 | Goroutine auxiliar scanner |
 
-**Total estimado de goroutines en ejecución:** 150+ goroutines concurrentes durante el monitoreo activo.
+**Total estimado de goroutines en ejecución:** **200+ goroutines concurrentes** durante el monitoreo activo.
 
 ---
 
