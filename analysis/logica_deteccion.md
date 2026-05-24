@@ -300,6 +300,44 @@ remotamente (el sistema analizado no tiene el debugger local). La depuración ke
 
 ---
 
+## Vector 14 — Servidor HTTP Local (Gin Framework)
+
+El AC tiene un servidor HTTP interno usando **`github.com/gin-gonic/gin`** (paquete `dvgs9C`).
+
+### Evidencia
+
+Métodos de Gin encontrados en tipo tabla del binario:
+```
+BindJSON, BindTOML, BindWith, BindYAML
+ClientIP, FullPath, GetInt64, GetQuery
+ProtoBuf, PureJSON, QueryMap, Redirect, RemoteIP
+ShouldBindJSON, ShouldBindTOML, ShouldBindWith, ShouldBindYAML
+AbortWithStatus, DefaultPostForm, NegotiateFormat, ShouldBindQuery
+SetHTMLTemplate, SecureJsonPrefix, GetPostFormArray
+StatusCodeColor, SaveUpload...
+```
+
+### Para qué se usa
+
+Las rutas HTTP están cifradas por garble -literals — sin análisis dinámico no son visibles.
+Posibles usos:
+1. **Comunicación interna AC ↔ UI de Wails**: La UI de Wails (WebView2) puede hacer fetch() a localhost
+2. **IPC entre componentes**: Si el AC tiene múltiples procesos, usan HTTP para comunicarse
+3. **Admin endpoint**: Para recibir comandos del servidor de forma separada al gRPC
+4. **Debug/telemetría local**: Endpoint de estado interno
+
+### Implicación para análisis
+
+Las rutas HTTP no pueden verse sin ejecutar el binario.
+Para descubrirlas se necesita:
+```
+1. Ejecutar AC en VM aislada
+2. Capturar tráfico localhost con Wireshark/Fiddler (proxy en 127.0.0.1)
+3. Las rutas aparecerán como strings en peticiones HTTP GET/POST a localhost:XXXX
+```
+
+---
+
 ## Paquete VKiZI7 — Aclaración
 
 **VKiZI7 NO es detección de procesos.** Es el paquete de integración con WebView2 (Chromium embebido para la UI de Wails). Los métodos como `ProcessFailed`, `AddRef`, `Release` son parte de la interfaz COM de WebView2.
