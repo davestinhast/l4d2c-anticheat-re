@@ -16,9 +16,10 @@ paquete de detección adicional `er9_yp`.
 | `YCJ5PUz_M` | Registro estático firmas | **116** | Paquete de firmas 4 |
 | `kNpc1A53` | Registro estático firmas | **84** | Paquete de firmas 5 |
 | `BdDIRo5Tv42` | Probable 6to registro de firmas | **~10** | 10 init closures + 1 sub-closure |
+| `msvCchDB` | Probable 7mo registro de firmas | **~19** | 19 init closures con sub-closures, sin decFunc |
 | `er9_yp` | Detección AC custom | **18** init closures | Strings cifrados, detección especializada |
 | `pdFrspK_G.hlavBkMcO` | Motor de detección directo | **644** closures | Checks hardcodeados en la función principal |
-| **TOTAL** | | **~1450** | Detecciones individuales combinadas |
+| **TOTAL** | | **~1470** | Detecciones individuales combinadas |
 
 ---
 
@@ -141,6 +142,30 @@ ra_94HIlnc6.init
 - El más pequeño de los paquetes de firmas confirmados
 - La sub-closure en `func10.1` indica que al menos una firma usa matching
   de múltiples condiciones (similar a las sub-closures de `WGfDxX0zz2M`)
+
+---
+
+## Paquete msvCchDB — ~19 Firmas Adicionales (7mo Registro)
+
+**Estructura:**
+- **23 funciones totales** — casi todas closures de init
+- 19 closures `init.func1` ... `init.func19`
+- Sub-closures en múltiples funciones (ej: `func10.1`, `func15.1`, etc.)
+- Sin `decFunc`, sin tipos propios, sin funciones no-init con lógica propia
+
+**Características:**
+- Patrón estructural idéntico a los otros registros de firmas (`kNpc1A53`, `BdDIRo5Tv42`)
+- Posición EXACTA en pclntab: **DESPUÉS de `w0bqp0RaeD`** (detección activa),
+  **ANTES de `GztdjdTxnX1w`** — confirmado por análisis de vecindad en pclntab
+- La ausencia de `decFunc` indica que los strings de matching son cleartext
+  (igual que `ra_94HIlnc6`, `EyjsrRr`, `WGfDxX0zz2M`, `YCJ5PUz_M`, `kNpc1A53`)
+- Con 19 init closures supera a `BdDIRo5Tv42` (~10) pero es el más pequeño
+  de los registros confirmados después de `kNpc1A53` (84)
+
+**Hipótesis:**
+- Firmas de cheats más recientes o de menor prevalencia
+- Posición después de `w0bqp0RaeD` sugiere que estas firmas se registran
+  justo antes del inicio del scan activo
 
 ---
 
@@ -298,8 +323,10 @@ pdFrspK_G.hlavBkMcO (función principal)
     ├── init() de WGfDxX0zz2M → registra 117 firmas en dUgTofmw
     ├── init() de YCJ5PUz_M   → registra 116 firmas en dUgTofmw
     ├── init() de kNpc1A53    → registra 84 firmas en dUgTofmw
+    ├── init() de BdDIRo5Tv42 → registra ~10 firmas en dUgTofmw
+    ├── init() de msvCchDB    → registra ~19 firmas en dUgTofmw
     └── init() de er9_yp      → registra 18 firmas cifradas en dUgTofmw
-                                              Total: 796 firmas locales
+                                              Total: ~825 firmas locales
     │
     ├── Conexión a l4d2center.com:443 (gRPC/TLS 1.3)
     │       └── Recibe H1oahxz1l3iY.CheatSigs → firmas adicionales del servidor
@@ -403,8 +430,9 @@ pdFrspK_G.hlavBkMcO (función principal)
 
 | Componente | Checks | Observaciones |
 |------------|--------|---------------|
-| Firmas estáticas (5 paquetes) | 778 | Registradas en init(), ejecutadas en runtime |
-| BdDIRo5Tv42 (probable 6to paquete) | ~10 | 10 init closures |
+| Firmas estáticas (5 paquetes principales) | 778 | ra_94HIlnc6 + EyjsrRr + WGfDxX0zz2M + YCJ5PUz_M + kNpc1A53 |
+| BdDIRo5Tv42 (probable 6to paquete) | ~10 | 10 init closures, sin decFunc |
+| msvCchDB (probable 7mo paquete) | ~19 | 19 init closures con sub-closures, sin decFunc |
 | er9_yp (cifradas) | ~18 | Strings cifrados, naturaleza desconocida |
 | hlavBkMcO closures | 644 | Hardcodeados, sin registro previo |
 | Blacklist entries | ~62 | 4 listas (BL1-BL4) |
@@ -412,4 +440,4 @@ pdFrspK_G.hlavBkMcO (función principal)
 | Source Engine scanner | 1 función | 7 closures internos |
 | VPK scanner | 1 patrón glob | + 2 regexes especiales |
 | Firmas del servidor | Variable | W99qYP.Pattern, actualizables |
-| **TOTAL ESTÁTICO** | **~1523** | Checks sin contar firmas del servidor |
+| **TOTAL ESTÁTICO** | **~1542** | Checks sin contar firmas del servidor |
