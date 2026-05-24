@@ -1,204 +1,176 @@
-// Esquema Protobuf Reconstruido — L4D2Center Anticheat
-//
-// Reconstruido desde análisis estático del binario l4d2c_anticheat.exe
-// Los nombres de mensajes son los nombres reales (no garblados) deducidos de
-// los field names que Go embebe en el binario para reflection.
-//
-// Nota: Los nombres de los mensajes en el paquete original están ofuscados.
-// Esta definición usa nombres descriptivos.
+// Esquema Protobuf — L4D2Center Anticheat
+// Reconstruido desde el binario mediante análisis estático.
+// Nombres de tipos ofuscados por garble — se mantienen los originales del binario.
+// Field numbers y tipos confirmados desde anotaciones protobuf:"..." en el binario.
+// Paquete ofuscado: P4mAKk
+// Contenedor de tipos de detección: x1JPPahi
 
 syntax = "proto3";
 
-package l4d2c;
-
-option go_package = "l4d2c/proto";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// MENSAJES DE AUTENTICACIÓN
-// ─────────────────────────────────────────────────────────────────────────────
-
-// Solicitud de autenticación inicial
-// Go struct: P4mAKk.(*QBb3vhiLW7n)
-message AuthRequest {
-  string auth    = 1;  // credencial de auth (token o hash)
-  int64  session = 2;  // ID de sesión
+// -----------------------------------------------------------------
+// BEt_icchsrxy — Mensaje Principal de Conexión (cliente → servidor)
+// -----------------------------------------------------------------
+// Enviado cuando el jugador intenta conectarse a un servidor.
+// Contiene HWID, addons, auth y todos los datos de validación.
+message BEt_icchsrxy {
+  bytes          Auth               = 1;   // token de autenticación
+  int64          Session            = 2;   // ID de sesión primaria
+  int64          Session2           = 3;   // ID de sesión secundaria
+  int64          Version            = 4;   // versión del AC cliente
+  int64          Game               = 5;   // AppID del juego (L4D2 = 550)
+  bytes          Server             = 6;   // "IP:Puerto" del servidor de destino
+  bytes          Code               = 7;   // código de operación
+  bytes          Data               = 8;   // datos adicionales (capturas, etc.)
+  bytes          Smurf              = 9;   // resultado de detección anti-smurf
+  bytes          HWData             = 10;  // ENOV9d serializado — hardware fingerprint
+  bytes          AppKey             = 11;  // clave de aplicación
+  bytes          ExtraInfo          = 12;  // información extra (arch, platform, buildType)
+  repeated bytes Addons             = 13;  // lista de archivos VPK instalados
+  bool           AddonsProvided     = 14;  // indica si se enviaron los addons
+  bool           CheatSigsRequested = 15;  // solicitar firmas de cheats al servidor
 }
 
-// Respuesta de autenticación — contiene el session token
-// Go struct: P4mAKk.(*P8ePybs)
-message AuthResponse {
-  bool   success = 1;
-  int64  session = 2;  // token de sesión asignado por el servidor
-  string error   = 3;
+// -----------------------------------------------------------------
+// ENOV9d — Hardware Fingerprint (HWID completo)
+// -----------------------------------------------------------------
+// Componentes repeated: cada campo es una lista de sub-mensajes serializados.
+// Los sub-mensajes individuales son EetHP7O (Disk), KLfm8u7 (MB), BlhNU1RKfjg (GPU).
+// Todos los datos provienen de consultas WMI vía COM (IWbemServices::ExecQuery).
+message ENOV9d {
+  bool           Success = 1;   // éxito de recolección completa
+  repeated bytes OS      = 2;   // Win32_OperatingSystem (BuildNumber, Version)
+  repeated bytes CPU     = 3;   // Win32_Processor (ProcessorId)
+  repeated bytes Disk    = 4;   // Win32_DiskDrive (SerialNumber, Model) → EetHP7O
+  repeated bytes MotherB = 5;   // Win32_BaseBoard (SerialNumber, Model) → KLfm8u7
+  repeated bytes GPU     = 6;   // Win32_VideoController (PNPDeviceID, Model) → BlhNU1RKfjg
 }
 
-// Respuesta de verificación de versión del AC
-// Go struct: P4mAKk.(*Ok4xyD92c8)
-message VersionResponse {
-  bool  success = 1;
-  int64 version = 2;  // versión esperada del AC
+// -----------------------------------------------------------------
+// EetHP7O — Datos de Disco Individual (Win32_DiskDrive)
+// -----------------------------------------------------------------
+message EetHP7O {
+  bool  Success = 1;
+  bytes Serial  = 2;  // SerialNumber del disco (via WMI o IOCTL_STORAGE_QUERY_PROPERTY)
+  bytes Model   = 3;  // Model del disco
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MENSAJES DE INFORMACIÓN DE CUENTA
-// ─────────────────────────────────────────────────────────────────────────────
-
-// Respuesta con información de la cuenta Steam
-// Go struct: P4mAKk.(*Qi1Z8I)
-message AccountInfo {
-  bool   success  = 1;
-  string error    = 2;
-  string steam_id = 3;  // Steam ID64 del jugador
-  string nickname = 4;  // nombre en Steam
-  bool   banned   = 5;  // si la cuenta tiene ban activo
+// -----------------------------------------------------------------
+// KLfm8u7 — Datos de Motherboard Individual (Win32_BaseBoard)
+// -----------------------------------------------------------------
+message KLfm8u7 {
+  bool  Success = 1;
+  bytes Serial  = 2;  // SerialNumber de la motherboard (SMBIOS)
+  bytes Model   = 3;  // Model de la motherboard
 }
 
-// Respuesta de verificación de fecha de instalación (anti-smurf)
-// Go struct: P4mAKk.(*AAUUUh)
-message InstallDateResponse {
-  bool   success      = 1;
-  string type         = 2;  // tipo de respuesta
-  int64  install_date = 3;  // timestamp UNIX de instalación de Steam
+// -----------------------------------------------------------------
+// BlhNU1RKfjg — Datos de GPU Individual (Win32_VideoController)
+// -----------------------------------------------------------------
+message BlhNU1RKfjg {
+  bool  Success = 1;
+  bytes Model   = 2;  // nombre del adaptador de video
+  bytes PnpID   = 3;  // PNPDeviceID — identificador único PCI de la GPU
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MENSAJES DE HARDWARE (HWID)
-// ─────────────────────────────────────────────────────────────────────────────
-
-// Datos de CPU individual (Win32_Processor)
-// Go struct: P4mAKk.(*KLfm8u7)
-message CPUInfo {
-  bool   success = 1;
-  string model   = 2;  // nombre/modelo del procesador
-  string serial  = 2;  // ProcessorId (ID único del chip)
+// -----------------------------------------------------------------
+// AAUUUh — Datos Anti-Smurf (fecha de instalación + tipo de cuenta)
+// -----------------------------------------------------------------
+// Enviado como lista junto con otros mensajes de detección.
+// InstallDate viene del registro de Windows o WMI Win32_Product.
+message AAUUUh {
+  bool  Success     = 1;
+  bytes Type        = 2;  // tipo de instalación o clasificación
+  int64 InstallDate = 3;  // timestamp UNIX de instalación de Steam
 }
 
-// Datos de disco individual (Win32_DiskDrive)
-// Go struct: P4mAKk.(*EetHP7O)
-message DiskInfo {
-  bool   success = 1;
-  string model   = 2;  // modelo del disco
-  string serial  = 2;  // número de serie del disco
+// -----------------------------------------------------------------
+// BiK8wj — Información de Archivo (verificación de VPK/addons)
+// -----------------------------------------------------------------
+// Enviado como lista (repeated) para reportar archivos del directorio del juego.
+// El glob pattern "*.vpk" en el binario confirma la búsqueda de archivos VPK.
+message BiK8wj {
+  bytes Path = 1;  // ruta del archivo
+  int64 Size = 2;  // tamaño del archivo en bytes
 }
 
-// Datos de GPU individual (Win32_VideoController)
-// Go struct: P4mAKk.(*BlhNU1RKfjg)
-message GPUInfo {
-  bool   success = 1;
-  string model   = 3;  // nombre del adaptador de video
-  string pnp_id  = 3;  // PNPDeviceID de la GPU
+// -----------------------------------------------------------------
+// ZwlL2R6Gvy — Información de Addon/Workshop Item
+// -----------------------------------------------------------------
+message ZwlL2R6Gvy {
+  bool  Success = 1;
+  bytes ID      = 2;  // ID del addon (workshop ID o hash interno)
+  bytes Name    = 3;  // nombre del addon
 }
 
-// HWID completo — todos los componentes de hardware
-// Go struct: P4mAKk.(*ENOV9d)
-message HardwareData {
-  bool     success  = 1;
-  repeated string os      = 2;  // Win32_OperatingSystem
-  repeated bytes  cpu     = 3;  // CPUInfo serializado (repeated — múltiples CPUs)
-  repeated bytes  disk    = 4;  // DiskInfo serializado (repeated — múltiples discos)
-  repeated bytes  mother_b = 5; // datos de motherboard (Win32_BaseBoard)
-  repeated bytes  gpu     = 6;  // GPUInfo serializado (repeated — múltiples GPUs)
+// -----------------------------------------------------------------
+// W99qYP — Firma de Cheat Individual (CheatSignature)
+// -----------------------------------------------------------------
+// El servidor envía repeated de estos en H1oahxz1l3iY.CheatSigs.
+// El cliente busca cada patrón en la memoria del proceso left4dead2.exe.
+// Si hay match: se reporta al servidor con Name y la dirección del match.
+message W99qYP {
+  bytes Name    = 1;  // nombre identificador del cheat
+  bytes Pattern = 2;  // secuencia de bytes del patrón (puede contener wildcards)
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MENSAJES DE CONEXIÓN AL SERVIDOR
-// ─────────────────────────────────────────────────────────────────────────────
-
-// Respuesta del servidor al conectar — contiene las firmas de cheats
-// Go struct: P4mAKk.(*H1oahxz1l3iY)
-message ConnectResponse {
-  bool            success    = 1;
-  string          error      = 2;
-  string          server_ip  = 3;  // IP real del servidor de juego
-  repeated bytes  cheat_sigs = 5;  // firmas de cheats (array de W99qYP serializado)
+// -----------------------------------------------------------------
+// Qi1Z8I — Estado de Cuenta Steam (ban check response)
+// -----------------------------------------------------------------
+message Qi1Z8I {
+  bool  Success  = 1;
+  bytes Error    = 2;
+  bytes SteamID  = 3;  // Steam ID del jugador (64-bit como string)
+  bytes Nickname = 4;  // nombre en Steam
+  bool  Banned   = 5;  // true si la cuenta está baneada
 }
 
-// Mensaje principal de conexión — enviado al conectarse al servidor
-// Go struct: P4mAKk.(*BEt_icchsrxy)
-message ConnectRequest {
-  string          auth                 = 1;   // auth token
-  int64           session              = 2;   // session ID principal
-  int64           session2             = 3;   // session ID secundario
-  int64           version              = 4;   // versión del AC cliente
-  int64           game                 = 5;   // ID del juego (L4D2 = ?)
-  string          server               = 6;   // IP:Puerto del servidor
-  string          code                 = 7;   // código de respuesta
-  bytes           data                 = 8;   // datos adicionales
-  string          smurf                = 9;   // resultado anti-smurf
-  bytes           hw_data              = 10;  // HardwareData serializado
-  string          app_key              = 11;  // clave de aplicación
-  string          extra_info           = 12;  // información extra
-  repeated string addons               = 13;  // lista de VPKs instalados
-  bool            addons_provided      = 14;  // si se enviaron addons
-  bool            cheat_sigs_requested = 15;  // solicitud de firmas
+// -----------------------------------------------------------------
+// H1oahxz1l3iY — Respuesta Inicial del Servidor (ConnectResponse)
+// -----------------------------------------------------------------
+message H1oahxz1l3iY {
+  bool           Success   = 1;
+  bytes          Error     = 2;
+  bytes          ServerIP  = 3;   // IP real del servidor de juego
+  // field 4: no identificado
+  repeated bytes CheatSigs = 5;   // W99qYP serializado — patrones de cheats activos
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MENSAJES DE FIRMAS DE CHEATS
-// ─────────────────────────────────────────────────────────────────────────────
-
-// Una firma de cheat individual
-// Go struct: P4mAKk.(*W99qYP)
-message CheatSignature {
-  string name    = 1;  // nombre del cheat
-  bytes  pattern = 2;  // secuencia de bytes a buscar en memoria
+// -----------------------------------------------------------------
+// Ok4xyD92c8 — Verificación de Versión del AC
+// -----------------------------------------------------------------
+message Ok4xyD92c8 {
+  bool  Success = 1;
+  int64 Version = 2;  // versión del AC que el servidor acepta/exige
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MENSAJES DE ARCHIVOS Y ADDONS
-// ─────────────────────────────────────────────────────────────────────────────
-
-// Información de un archivo addon
-// Go struct: P4mAKk.(*BiK8wj)
-message AddonFile {
-  string path = 1;  // ruta del archivo VPK
-  int64  size = 2;  // tamaño en bytes
+// -----------------------------------------------------------------
+// P8ePybs — Respuesta de Autenticación (contiene session token)
+// -----------------------------------------------------------------
+message P8ePybs {
+  bool  Success = 1;
+  bytes Error   = 2;
+  int64 Session = 3;  // session token asignado por el servidor
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MENSAJES DE INFO DE SERVIDOR
-// ─────────────────────────────────────────────────────────────────────────────
-
-// Información de servidor de juego
-// Go struct: P4mAKk.(*ZwlL2R6Gvy)
-message ServerInfo {
-  bool   success = 1;
-  string id      = 2;  // ID del servidor
-  string name    = 3;  // nombre del servidor
+// -----------------------------------------------------------------
+// QBb3vhiLW7n — Request de Autenticación / Heartbeat
+// -----------------------------------------------------------------
+// Enviado periódicamente para mantener la sesión activa.
+message QBb3vhiLW7n {
+  bytes Auth    = 1;  // credencial de auth
+  int64 Session = 2;  // session ID activo
 }
 
-// Respuesta genérica de operaciones
-// Go struct: P4mAKk.(*N0Iwv9FQ)
-message GenericResponse {
-  bool   success = 1;
-  string error   = 2;
+// -----------------------------------------------------------------
+// N0Iwv9FQ — Respuesta Genérica
+// -----------------------------------------------------------------
+message N0Iwv9FQ {
+  bool  Success = 1;
+  bytes Error   = 2;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CAMPOS ADICIONALES IDENTIFICADOS POR NOMBRE (field numbers no determinados)
-// ─────────────────────────────────────────────────────────────────────────────
-
-// Información de estado del juego (enviada en heartbeats o reportes)
-// Los field numbers de estos campos no fueron determinados con certeza
-message GameState {
-  string game_id     = 1;
-  string map_name    = 2;
-  string mode        = 3;
-  int32  max_players = 4;
-  int32  players     = 5;
-  bool   vac         = 6;
-  bool   source_tv   = 7;
-  int32  edf         = 8;
-  bool   the_ship    = 9;
-  int32  visibility  = 10;
-}
-
-// Reporte de estado del jugador (enviado en el ban report)
-message PlayerState {
-  int32  score     = 1;
-  int32  deaths    = 2;
-  int32  bots      = 3;
-  int32  money     = 4;
-  string witnesses = 5;  // IDs de testigos (otros jugadores en el servidor)
-  string duration  = 6;  // duración de la sesión
-}
+// -----------------------------------------------------------------
+// MdQhYNc — Mensaje Vacío (posiblemente Heartbeat Ping)
+// -----------------------------------------------------------------
+// Sin campos identificados. Probablemente ping vacío de heartbeat.
+message MdQhYNc {}

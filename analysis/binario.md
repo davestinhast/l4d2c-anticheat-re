@@ -129,6 +129,47 @@ Evidencia de `garble` (herramienta de ofuscación para Go):
 
 Los nombres de métodos que sobreviven parcialmente son aquellos expuestos vía la interfaz Wails (se bindan como string al frontend JS y no pueden ofuscarse sin romper la funcionalidad).
 
+## API de Wails — Funciones Expuestas al Frontend
+
+Los archivos JavaScript `App.js` y `App.d.ts` están embebidos en el binario como parte del
+filesystem virtual de Wails. Fueron extraídos directamente:
+
+### App.d.ts (TypeScript declarations)
+
+```typescript
+// Auto-generated. DO NOT EDIT.
+export function ConnectL4D2Server(arg1:string):Promise<void>;
+export function FrontendReady():Promise<void>;
+export function StartL4D2():Promise<void>;
+```
+
+### App.js (JavaScript implementation)
+
+```javascript
+// Auto-generated. DO NOT EDIT.
+export function ConnectL4D2Server(arg1) {
+  return ObfuscatedCall(0, [arg1]);
+}
+export function FrontendReady() {
+  return ObfuscatedCall(1, []);
+}
+export function StartL4D2() {
+  return ObfuscatedCall(2, []);
+}
+```
+
+**`ObfuscatedCall(id, args)`** es un mecanismo de seguridad personalizado de este AC.
+Wails normalmente usa `window.go.main.App.FunctionName()` para llamar al backend Go,
+lo que expone los nombres de funciones en el JavaScript. Esta implementación usa IDs
+numéricos en vez de nombres para ocultar las funciones al análisis del frontend.
+
+IDs de funciones:
+- `0` → `ConnectL4D2Server(serverIP: string)` — conectar a servidor (arg1 = IP:Puerto)
+- `1` → `FrontendReady()` — UI lista (Wails llama esto automáticamente)
+- `2` → `StartL4D2()` — lanzar el juego Left 4 Dead 2
+
+Los tres métodos implementados en el struct `HpP4qwz` coinciden exactamente con estas tres funciones.
+
 ## Manifest de Recursos (.rsrc)
 
 ```xml

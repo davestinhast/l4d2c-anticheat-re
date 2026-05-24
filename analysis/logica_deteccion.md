@@ -160,6 +160,87 @@ Factores del sistema anti-smurf:
 
 ---
 
+## Vector 11 — Monitoreo de Proceso vía gopsutil
+
+El AC usa la biblioteca `gopsutil` (paquete `sNAkh4`) para monitorear el proceso del juego
+con un nivel de detalle mucho más fino que los ACs convencionales.
+
+### Datos recolectados del proceso left4dead2.exe
+
+```
+CmdlineWithContext   — línea de comandos completa al lanzar el juego
+EnvironWithContext   — variables de entorno del proceso del juego
+PercentWithContext   — uso de CPU del proceso
+ThreadsWithContext   — lista de threads del proceso
+MemoryInfo           — RSS, VMS, swap, hwm, stack
+MemoryMaps           — mapa completo de regiones de memoria
+IOCounters           — bytes leídos/escritos por el proceso
+NumThreads           — número de threads
+NumCtxSwitches       — context switches (voluntary + involuntary)
+PageFaults           — page faults del proceso
+Connections          — conexiones de red del proceso del juego
+CPUAffinity          — afinidad de CPU
+Foreground           — si el proceso está en foreground
+```
+
+Esto permite al AC detectar:
+- Flags de debug en la línea de comandos (`-condebug`, `-insecure`, `+sv_cheats 1`)
+- Variables de entorno sospechosas (`WINEDLLOVERRIDES`, `LD_PRELOAD`)
+- Proxies locales en las conexiones del proceso (`127.0.0.1:8080`)
+- Memoria anómala por inyección de código
+
+Ver `analysis/monitoreo_proceso.md` para documentación completa.
+
+---
+
+## Vector 12 — A2S Query (Consulta al Servidor Source Engine)
+
+El AC implementa el protocolo A2S (Source Engine server query) para consultar directamente
+al servidor de juego e independientemente verificar los datos.
+
+### Paquetes identificados
+
+```
+hh58lo           — cliente A2S query (40+ funciones)
+eUmM3IpzIrV      — struct de respuesta A2S_INFO
+gG7Vmb7          — biblioteca de transporte (300+ funciones)
+```
+
+### Campos A2S_INFO recolectados
+
+La struct `eUmM3IpzIrV` contiene los campos estándar de A2S_INFO:
+
+```json
+{
+  "Name": "nombre del servidor",
+  "Map": "c1m1_hotel",
+  "Folder": "left4dead2",
+  "Game": "Left 4 Dead 2",
+  "AppID": 550,
+  "GameID": 550,
+  "Players": 4,
+  "MaxPlayers": 4,
+  "Bots": 0,
+  "VAC": true,
+  "Visibility": 0,
+  "Port": 27015,
+  "Protocol": 17,
+  "ServerOS": "W",
+  "ServerType": "d",
+  "EDF": 177,
+  "Mode": "coop",
+  "Deaths": 0,
+  "Score": 0,
+  "Duration": 1234,
+  "SourceTV": false
+}
+```
+
+El AC compara estos datos con lo que el jugador reporta para detectar inconsistencias
+(ej: el jugador dice conectarse al servidor X pero A2S_INFO muestra datos diferentes).
+
+---
+
 ## Paquete VKiZI7 — Aclaración
 
 **VKiZI7 NO es detección de procesos.** Es el paquete de integración con WebView2 (Chromium embebido para la UI de Wails). Los métodos como `ProcessFailed`, `AddRef`, `Release` son parte de la interfaz COM de WebView2.
