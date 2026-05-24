@@ -36,6 +36,10 @@ La identificación se realizó por análisis de métodos, campos y comportamient
 | `q7klgJ` | `encoding/json` | `decFunc`, `DayNID`, tipos HqQopxeAAae, GZl_OkHQ, SLiecRC85GxP |
 | `O2WU0BYsD` | `os/exec` | `(*SGUe_Ecp).Start/Run/Wait/Output/CombinedOutput/Environ` = exec.Cmd |
 | `SGUe_Ecp` | `exec.Cmd` | Todos los métodos de exec.Cmd presentes |
+| `u26yruH2Ly_u` | **`net` (stdlib)** — paquete de red de Go | **1030 funciones**. `(*a6stst3y)` = `net.TCPConn` (Close, CloseRead, CloseWrite, File, LocalAddr, MultipathTCP, Read, ReadFrom, RemoteAddr, SetDeadline, SetKeepAlive, SetKeepAliveConfig, SetKeepAlivePeriod, SetLinger, SetNoDelay, SetReadBuffer, SetReadDeadline, SetWriteBuffer, SetWriteDeadline, SyscallConn, Write). El paquete más grande de stdlib en el binary |
+| `dzpA6s` | **`crypto/cipher`** — modos de cifrado de bloque | `NewCTR`, `NewGCM`, `NewCBCEncrypter`, `NewCBCDecrypter` encontrados en tipo tabla. El AC usa AES en múltiples modos: GCM (autenticado, principal), CBC (secundario), CTR (streaming). Aparece adyacente a `PcTWfu` (AES) en la tabla de tipos |
+| `AFdc2Qd` | **`crypto/elliptic` + `math/big`** — curvas elípticas y aritmética big-int | **225 funciones**. `(*AhD79vsT_)` = curva elíptica (Add, Bytes, BytesCompressed, BytesX, Double, ScalarBaseMult, ScalarMult, Select, Set, SetBytes, SetGenerator). Usadas por TLS/ECDH durante handshake gRPC. `(*BYSujzXozZ0).Add` = otro tipo de curva (P256/P384?) |
+| `mPmrATx3LG` | **`google.golang.org/protobuf/internal/impl`** — runtime de mensajes protobuf | **1482 funciones** — la biblioteca más grande del binario. `(*_c4YMU8F)` implementa `protoreflect.Message` completa: Clear, Descriptor, Get, GetUnknown, Has, Interface, IsValid, LoadMessageInfo, Mutable, New, NewField, ProtoMessageInfo, ProtoMethods, Range, Set, SetUnknown, StoreMessageInfo, Type, WhichOneof. Múltiples tipos de mensaje protobuf generados por protoc |
 
 ---
 
@@ -44,7 +48,7 @@ La identificación se realizó por análisis de métodos, campos y comportamient
 | Paquete Garbled | Paquete Real | Evidencia |
 |-----------------|-------------|-----------|
 | `i1aqCskEISkX` | `net/http` + `golang.org/x/net/http2` | HTTP/2 framer (WriteContinuation, WriteData, WriteHeaders, WriteSettings), HTTP transport (RoundTrip, CloseIdleConnections), Authenticate, BasicAuth, SetBasicAuth |
-| `gG7Vmb7` | **Transporte de red / biblioteca de captura** (452+ funciones) | Cross-referencia a `q4ajG0RM.Aa8DB2bIK66` (gopacket type). Con 452 funciones es el transporte de red más grande. Probablemente `github.com/google/gopacket/pcap` (pcap live capture) o `github.com/pion/sctp` (SCTP transport layer para DTLS) |
+| `gG7Vmb7` | **`github.com/google/gopacket/pcap`** — captura de paquetes en vivo | **452 funciones**. Confirmado por `WritePacketData` (método exclusivo de pcap) y cross-referencias a `q4ajG0RM.Aa8DB2bIK66` (gopacket type). El AC captura tráfico de red en vivo desde la interfaz de red del sistema para monitorear las conexiones del juego |
 | `hh58lo` | Structs de respuesta A2S (campos JSON) | Tipos: `*hh58lo.Phr6ow`, `*hh58lo.GV2qnv`, `*hh58lo.Ea9gTx`, `*hh58lo.BT1E5g`, `*hh58lo.FnICOY`; campos json:"VAC", json:"SteamID", json:"Name", json:"Game", json:"AppID" |
 | `HBJGtL` | **Cliente A2S Protocol** (implementación del protocolo Source Engine server query) | `(*Ns0npSNFWWqQ).QueryInfo` = A2S_INFO, `(*Ns0npSNFWWqQ).QueryPlayer` = A2S_PLAYER, `(*Ns0npSNFWWqQ).Close`, `(*JG00Xm6lG8)` = lector binario (ReadUint8/16/32/64/String/Float32), `(*XxIkaC9_)` = escritor binario (WriteBytes/WriteCString), 11 funciones init |
 | `eUmM3IpzIrV` | **Capa de conectividad de red** (manager de conexiones + DTLS) | **328 funciones**. Referencia a `qTnr3tOf4N.A0lMBv6KYzU_` (DTLS type) y `i1aqCskEISkX` (http2). Tipos complejos: `c4yDowusz` con `func(*c4yDowusz)` — struct con callback de conexión. Probablemente `github.com/pion/transport` o el connectivity layer de gRPC. **CORRECCIÓN:** Identificación previa como "A2S_INFO struct" era incorrecta — el package real de A2S structs es `hh58lo` |
@@ -55,6 +59,19 @@ La identificación se realizó por análisis de métodos, campos y comportamient
 | `OwbnEHL7gtm` | `gopacket` / librería 802.11 | Métodos Bandwidth, ShortGI, GuardInterval, MCSIndex, FECType, ReportZerolen, IsZerolen, LastKnown, DelimCRCErr |
 | `qTnr3tOf4N` | **DTLS / TLS-over-UDP** — implementación TLS para canal UDP seguro | 163 entradas; tipos: `(*ExZca80)` = SessionState, `(*Gy_XwjZ)` = Conn (conexión TLS), `(*vjSRqd6ov)` = record/paquete, `(*iTeUYgu)` = handshake config, `(*_ZyRwtuuaU)` = estado cliente, `(*vE6jf82QV)` = tipo alert/record, `(*JSj6sp1QG)` = cert/key, `(*QmRsQS5)` = factory (retorna `*ExZca80` o `*Gy_XwjZ`); referencias cruzadas a `l8F_pdQP` (x509.Certificate = `ZIbJOWC4`) y `eUmM3IpzIrV` |
 | `l8F_pdQP` | **`crypto/x509`** (nombre corto garbled) | = mismo paquete que `LYUqBZOV7RHi` (path garbled); `ZIbJOWC4` = x509.Certificate; `decFunc` = string literals garbled; diferencia: `l8F_pdQP` = package NAME en type table, `LYUqBZOV7RHi` = package PATH en pclntab |
+
+---
+
+---
+
+## Paquetes de Terceros Adicionales (identificados)
+
+| Paquete Garbled | Paquete Real | Evidencia |
+|-----------------|-------------|-----------|
+| `dvgs9C` | **`github.com/gin-gonic/gin`** — servidor HTTP web | Confirmado por `AbortWithStatus`, `SetHTMLTemplate`, `DefaultPostForm`, `NegotiateFormat`, `ShouldBindQuery`, `StatusCodeColor`, `SecureJsonPrefix`, `GetPostFormArray`, `SaveUpload...` en tabla de tipos. El AC ejecuta un **servidor HTTP local (Gin)** — probablemente para comunicación entre componentes o para la UI de Wails. Las rutas HTTP están cifradas por garble -literals, no visibles en análisis estático |
+| `cXI2MODy` | **Sub-paquete de Gin** (`gin/render` o `gin/binding`) | Tiene `AbortWithStatus` y otros métodos Gin. Posiblemente `gin/render` para rendering de respuestas JSON/HTML |
+| `Ve0nLKBMzmC` | **`github.com/go-playground/validator/v10`** — validación de datos | `(*adPnywIlKf75)`: Field, GetTag, ExtractType, Param, Parent, Top, ReportError, ReportValidationErrors, Validator. Valida los datos del protocolo gRPC y posiblemente los campos protobuf recibidos del servidor |
+| `vfFlma` | Paquete de encoding/protocolo (171 funciones) | Tipos: `BAbJq9d`, `CCwyMQn` con interfaz `FindExtension` (protobuf). Referencias cruzadas a `oJ5pXwZm7R` y `t5W7d4Vh7E`. Probablemente sub-paquete del codec protobuf |
 
 ---
 
