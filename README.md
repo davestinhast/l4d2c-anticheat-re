@@ -89,14 +89,17 @@ analysis/
   goroutines.md              Arquitectura de goroutines y timing
   protobuf_esquema.md        Esquema protobuf completo reconstruido
   hwid.md                    HWID: queries WMI, structs, bypass detallado
+  pipeline_hwid.md           Pipeline HWID completo: A39Z4i → FXWqsvy_ → dUgTofmw
   listas_negras.md           Blacklists completas de procesos y ventanas
-  logica_deteccion.md        Lógica interna de detección
+  logica_deteccion.md        Lógica interna de detección (20 vectores documentados)
   protocolo_red.md           Protocolo de red, autenticación, MITM
   motor_deteccion.md         Motor de detección principal
+  pdFrspK_G.md               Motor hlavBkMcO: 644 verificaciones activas de detección
+  scanner_source_engine.md   Scanner de ConVars Source Engine (sOAbtRgFLa6_)
   monitoreo_proceso.md       gopsutil y monitoreo de proceso
-  paquetes_identificados.md  Mapa completo de paquetes garble → librería real
+  paquetes_identificados.md  Mapa completo de paquetes garble (183 paquetes identificados)
   frontend_ui.md             Análisis de la UI: HTML, JavaScript, WebSocket IPC
-  bypass_guide.md            Guía de bypass para todos los vectores
+  bypass_guide.md            Guía de bypass para todos los vectores (20 vectores)
   ui_logo.png                Logo extraído del binario (150,356 bytes)
 
 proto/
@@ -128,10 +131,13 @@ proto/
 
 ### Detección
 - **CheatSigs dinámicos** — patrones de bytes descargados del servidor en cada sesión
+- **778 firmas de cheat hardcoded** en 5 paquetes de firmas estáticas: `ra_94HIlnc6`(299) + `EyjsrRr`(162) + `WGfDxX0zz2M`(117) + `YCJ5PUz_M`(116) + `kNpc1A53`(84). Supera en firmas estáticas a EAC y VAC
+- **`hlavBkMcO` — motor de detección principal** con **644 sub-closures** en el paquete `pdFrspK_G`. Cada closure = una verificación activa de estado del juego. Distinto de las firmas estáticas: estas se EJECUTAN directamente, no se registran en tablas
 - **Blacklist de 35+ herramientas RE** incluyendo: Ghidra, x32dbg, WinDbg, IDA Pro, de4dot, dnSpy, Fiddler, aimware, y otros
 - **Endpoint gRPC `/auth`** confirmado — encontrado en string table inmediatamente después de la blacklist
 - **Búsqueda de VPKs** con patrón glob `k1e1y*.vpk` para cheats conocidos de L4D2
 - **Screenshot automático** cada ~120s como evidencia de ban (PNG NRGBA)
+- **`os/exec`** presente — el AC puede spawnar procesos del sistema (wmic, bcdedit, sc, powershell) para detección y recolección de datos adicionales
 
 ### Anti-Análisis
 - **garble** — todos los nombres de paquetes, tipos y funciones son strings aleatorios
@@ -160,12 +166,17 @@ proto/
 |--------|-----------|--------|
 | Blacklist ventanas | Baja | Renombrar ventana del debugger |
 | Blacklist procesos | Baja | Renombrar ejecutable |
-| HWID (WMI) | Media | Hook vtable IWbemServices::ExecQuery |
+| HWID pipeline (`FXWqsvy_`) | Media | Hook Z6ey1EJD.func1-11 con frida |
 | CheatSigs memoria | Alta | No inyectar en proceso / hook VirtualQuery |
+| 778 firmas estáticas | Alta | Polimorfismo / código sin firmas conocidas |
+| `hlavBkMcO` 644 checks | Muy Alta | Análisis dinámico completo + hook Feed() |
 | DLL modules | Alta | Manual mapping (sin LoadLibrary) |
+| os/exec procesos | Media | Hook CreateProcess para output limpio |
 | Screenshots | N/A | Solo evidencia, no prevención directa |
 | Heartbeat | N/A | No requiere bypass |
 | SteamID | Media | Requiere cuenta legítima |
 | InstallDate | Media | Hook de lectura de registro |
 | gopsutil | Baja | No usar flags sospechosos en procesos |
+| Source Engine ConVars | Media | Hook ReadProcessMemory |
+| Captura de paquetes (pcap) | Muy Alta | VM con NIC virtual |
 | Protocolo red | Baja | Burp Suite (sin certificate pinning) |
