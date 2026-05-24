@@ -97,6 +97,7 @@ analysis/
   pdFrspK_G.md               Motor hlavBkMcO: 644 verificaciones activas de detección
   scanner_source_engine.md   Scanner de ConVars Source Engine (sOAbtRgFLa6_)
   monitoreo_proceso.md       gopsutil y monitoreo de proceso
+  main_package.md            Paquete main: ciclo de vida Wails, 75 closures Startup, QSUMsCa
   paquetes_identificados.md  Mapa completo de paquetes garble (183 paquetes identificados)
   frontend_ui.md             Análisis de la UI: HTML, JavaScript, WebSocket IPC
   bypass_guide.md            Guía de bypass para todos los vectores (20 vectores)
@@ -153,10 +154,12 @@ proto/
 - `BEwVDQOh5` = `encoding/xml` de Go (no sistema de tokens)
 
 ### Goroutines (150+ en total durante monitoreo activo)
-- Startup: 87 goroutines (incluyendo Wails + runtime)
-- ConnectL4D2Server: 4 goroutines principales
-- Motor de detección (ga4oovjHCfg): 37 closures (33 goroutines de detección + 4 sub-goroutines anidadas)
-- StartL4D2: 5 goroutines de monitoreo del juego
+- Startup: 87 goroutines (incluyendo Wails + runtime) — `Startup` tiene 75 closures totales: `func1-60` directas + `ZrMEw4hJW.func61-75` (función inner nombrada) + `gowrap2`
+- ConnectL4D2Server: 4 goroutines principales (`func1-4`)
+- QSUMsCa (orquestador de detección): 4 gowraps + 2 inner goroutines (`MDfyjAe.func7`, `RaR0kkqIl.func8`) = 6 goroutines
+- Motor de detección (`pdFrspK_G.hlavBkMcO`): 644 verificaciones activas paralelas
+- StartL4D2: 4 closures + goroutine de capturas (`func4.1`)
+- BhCuafOD (xxhash) confirma: el HWID final es un hash xxHash64 de los 5 componentes de hardware
 
 ---
 
