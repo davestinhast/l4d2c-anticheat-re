@@ -1,136 +1,166 @@
-# Goroutine Architecture — Concurrent Detection Design
+# Arquitectura de Goroutines — Diseño Concurrente
 
-L4D2Center Anticheat is a Go program. Go uses goroutines (lightweight threads) for concurrency.
-Each detection module runs as a separate goroutine. This is the inferred architecture.
+L4D2Center Anticheat es un binario Go. Go usa goroutines (hilos ligeros) para concurrencia. Cada módulo de detección corre como una goroutine separada.
 
 ---
 
-## Main Goroutine Flow
+## Flujo del Goroutine Principal
 
 ```
-main() 
+main()
   └── Wails runtime init
-        └── app.(*HpP4qwz) struct created
-              ├── FrontendReady() registered
-              ├── StartL4D2() registered
-              └── ConnectL4D2Server() registered
+        └── app.(*HpP4qwz) struct creado
+              ├── FrontendReady() registrado
+              ├── StartL4D2() registrado
+              └── ConnectL4D2Server() registrado
 ```
 
-## ConnectL4D2Server() Goroutines
+---
 
-When the player clicks "Connect", `ConnectL4D2Server(serverIP)` spawns multiple goroutines:
+## Goroutines de ConnectL4D2Server()
+
+Cuando el usuario hace clic en "Conectar", `ConnectL4D2Server(serverIP)` lanza múltiples goroutines:
 
 ```
 ConnectL4D2Server(ip string)
-  ├── func1: Authentication goroutine
-  │     → Read SteamID (GetSteamID)
-  │     → Collect HWID (WMI queries)
-  │     → Get auth token from server
-  │     → Validate account (GetSmurf)
+  ├── func1: Goroutine de autenticación
+  │     → Lee SteamID (GetSteamID desde Steam local)
+  │     → Obtiene fecha de instalación Steam (GetInstallDate)
+  │     → Recolecta HWID vía WMI (HWARRxN.Build)
+  │     → Solicita auth token al servidor (Authenticate)
+  │     → Verifica smurf (GetSmurf)
+  │     → Verifica si está baneado (GetBanned / Qi1Z8I)
   │
-  ├── func2: Detection setup goroutine
-  │     → Request CheatSigs from server
-  │     → Enumerate addons (GetAddons)
-  │     → Start scanner loop
+  ├── func2: Goroutine de configuración de detección
+  │     → Solicita CheatSigs del servidor (H1oahxz1l3iY)
+  │     → Enumera addons VPK (GetAddons)
+  │     → Inicializa el WatchList (_6di6zc0se2v)
+  │     → Inicia loop de escaneo
   │
-  ├── func3: Main detection loop goroutine (ticker)
-  │     → Every N seconds:
-  │         ├── Scan window titles (EnumWindows blacklist)
-  │         ├── Scan process memory (CheatSigs patterns)
-  │         └── Heartbeat to server
+  ├── func3: Goroutine del loop de detección principal (ticker)
+  │     → Cada N segundos:
+  │         ├── Scan de títulos de ventana (EnumWindows + blacklist)
+  │         ├── Scan de memoria del proceso (ReadProcessMemory + CheatSigs)
+  │         ├── Validación de estado del juego (i4localSurvivorGunFire)
+  │         └── Heartbeat al servidor
   │
-  └── func4: Result handler goroutine
-        → On detection: Screenshot → Report → Disconnect/Ban
+  └── func4: Goroutine handler de resultados
+        → Al detección: Screenshot (BitBlt) → Reporte → Desconexión/Ban
 ```
 
-## StartL4D2() Goroutines
+---
+
+## Goroutines de StartL4D2()
 
 ```
 StartL4D2()
-  ├── func1: Game process launcher
+  ├── func1: Lanzador del proceso del juego
   │     → CreateProcess("left4dead2.exe")
-  │     → Monitor process health
+  │     → Monitorea salud del proceso
   │
-  ├── func2: Game monitor goroutine
-  │     → Detect game crash / exit
-  │     → Re-launch if configured
+  ├── func2: Monitor del juego
+  │     → Detecta crash / salida del juego
+  │     → Relanzar si configurado
   │
-  ├── func3: Process injection watcher
-  │     → Monitor game's module list
-  │     → Flag unexpected DLLs
+  ├── func3: Vigilante de inyección de procesos
+  │     → Monitorea lista de módulos DLL del juego
+  │     → Module32First / Module32Next en loop
+  │     → Marca DLLs inesperados
   │
-  ├── func4: Screenshot timer goroutine
-  │     → Periodic BitBlt captures
-  │     → Store for ban evidence
+  ├── func4: Goroutine de screenshots periódicos
+  │     → Capturas periódicas con BitBlt
+  │     → Almacena para evidencia de ban
   │
-  └── func4.1: Screenshot sub-handler
+  └── func4.1: Sub-handler de screenshots
 ```
 
 ---
 
-## Goroutine Timing (Estimated)
+## Paquetes Clave y Su Rol
 
-| Goroutine | Estimated Interval |
-|---|---|
-| Heartbeat to server | ~30 seconds |
-| Window title scan | ~5-10 seconds |
-| Memory signature scan | ~60 seconds (expensive) |
-| Screenshot capture | ~120 seconds (random?) |
-| HWID heartbeat | Once on connect |
-
-These are estimates based on typical AC behavior — not confirmed without dynamic analysis.
-
----
-
-## Why Goroutines Matter for Bypass
-
-1. **Timing windows**: Each goroutine has a sleep interval between checks. Executing cheat code during the sleep window avoids detection.
-
-2. **Goroutine scheduling**: Go's runtime scheduler (GOMAXPROCS-limited) means all goroutines run on the same OS threads. A single long blocking operation can delay ALL goroutines (including detection) by one scheduler quantum.
-
-3. **Channel communication**: Detection goroutines communicate results via channels. If you can delay/block the channel, detection reporting is delayed.
-
-4. **Panic recovery**: Go goroutines recover from panics independently. If you can cause the detection goroutine to panic (controlled crash), it may not restart immediately.
+| Paquete (garbled) | Rol identificado |
+|-------------------|-----------------|
+| `main.(*HpP4qwz)` | Struct principal de la app Wails |
+| `P4mAKk` | Mensajes Protobuf (todos los tipos de mensaje) |
+| `HWARRxN` | Constructor de HWID (Build) |
+| `BEwVDQOh5` | Sistema de tokens (Token, RawToken, EncodeToken) |
+| `i1aqCskEISkX` | Cliente HTTP (Authenticate, BasicAuth) |
+| `_6di6zc0se2v` | WatchList (vigilancia de procesos/ventanas) |
+| `DiU0jWi` | Detección de versión de Windows |
+| `VKiZI7` | Integración WebView2 (interfaz UI — NO detección) |
+| `eiW4NTKLkx` | HTML template engine (UI de Wails) |
+| `H5_Lib8AHNQN` | Runtime de Wails (ExecJS, WebView) |
+| `aOD4q1Y` | Protobuf registry / descriptor |
+| `oFJMvWezJ9O` | Utilitarios de ventana (GetWindowDPI) |
 
 ---
 
-## Finding Goroutine Boundaries in Ghidra
+## Timing Estimado de Goroutines
 
-After loading with GoReSym labels, goroutine spawns are `runtime.newproc` calls:
+| Goroutine | Intervalo estimado |
+|-----------|-------------------|
+| Heartbeat al servidor | ~30 segundos |
+| Scan de títulos de ventana | ~5-10 segundos |
+| Scan de memoria (CheatSigs) | ~60 segundos |
+| Screenshot | ~120 segundos (posiblemente aleatorio) |
+| HWID (initial) | Una sola vez al conectar |
+| Vigilancia de módulos | Continua (event-based) |
 
-```asm
-; Go goroutine spawn pattern:
-lea  rax, <function_pointer>      ; address of goroutine function
-mov  qword ptr [rsp+8h], rax
-mov  ecx, <stack_size>            ; usually 0 (use default)
-call runtime.newproc               ; spawn goroutine
-```
-
-Search for `runtime.newproc` calls in:
-- `main.(*HpP4qwz).ConnectL4D2Server` → this is where detection goroutines spawn
-- `main.(*HpP4qwz).StartL4D2` → game monitoring goroutines
-
-Each call spawns one goroutine with the function pointer as its entry point.
+Estimados basados en comportamiento típico de ACs — no confirmados sin análisis dinámico.
 
 ---
 
-## Timer Implementation
+## Implementación de Timers
 
-Go timers use `runtime.newTimer` internally. The detection interval is likely:
+Los timers de Go usan `time.NewTicker` internamente. El ticker de detección probablemente sigue este patrón:
 
 ```go
-// Source code equivalent (garbled in binary):
+// Equivalente en código fuente (garblado en binario):
 ticker := time.NewTicker(10 * time.Second)
 for {
     select {
     case <-ticker.C:
         scanWindows()
         scanMemory()
+        sendHeartbeat()
     case <-done:
         return
     }
 }
 ```
 
-In Ghidra: look for `time.NewTicker` or `time.After` calls near the scanning functions.
-The interval value (in nanoseconds) will be a constant argument.
+En Ghidra: buscar `time.NewTicker` o `time.After` cerca de las funciones de escaneo. El valor del intervalo (en nanosegundos) es un argumento constante.
+
+---
+
+## Por Qué las Goroutines Importan para el Bypass
+
+### Ventanas de tiempo
+Cada goroutine tiene un sleep entre checks. Ejecutar código cheat durante el sleep evita la detección del scan de ese ciclo.
+
+### Scheduling de Go
+El scheduler de Go (limitado por GOMAXPROCS) hace que todas las goroutines corran en los mismos OS threads. Una operación bloqueante larga puede retrasar TODAS las goroutines (incluyendo las de detección) por un quantum del scheduler.
+
+### Comunicación por canales
+Las goroutines de detección reportan resultados vía channels. Si se puede retrasar/bloquear el channel, el reporte de detección se retrasa.
+
+### Recuperación de panics
+Las goroutines de Go se recuperan de panics independientemente. Si se puede hacer crashear la goroutine de detección de forma controlada, puede no reiniciarse inmediatamente.
+
+---
+
+## Encontrar Boundaries de Goroutines en Ghidra
+
+Los spawns de goroutines son llamadas a `runtime.newproc`:
+
+```asm
+; Patrón de spawn de goroutine en Go:
+lea  rax, <function_pointer>      ; dirección de la función goroutine
+mov  qword ptr [rsp+8h], rax
+mov  ecx, <stack_size>            ; usualmente 0 (usar default)
+call runtime.newproc               ; lanzar goroutine
+```
+
+Buscar llamadas a `runtime.newproc` en:
+- `main.(*HpP4qwz).ConnectL4D2Server` → goroutines de detección
+- `main.(*HpP4qwz).StartL4D2` → goroutines de monitoreo del juego
