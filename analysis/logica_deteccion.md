@@ -487,6 +487,79 @@ Paquetes de librería estándar con impacto directo en los vectores de detecció
 
 ---
 
+## Vector 19 — Ejecución de Procesos Externos (`os/exec`)
+
+El paquete `O2WU0BYsD` = `os/exec` está presente en el binario. Esto confirma
+que el AC puede **spawnar procesos del sistema** como parte de su detección.
+
+```
+O2WU0BYsD.(*SGUe_Ecp)  = exec.Cmd
+  ├── .Run()            — ejecutar y esperar
+  ├── .Start()          — ejecutar en background
+  ├── .Wait()           — esperar completación
+  ├── .Output()         — capturar stdout
+  └── .CombinedOutput() — capturar stdout + stderr
+
+O2WU0BYsD.(*M98iondPqIn) = os.ProcessState
+  ├── .ExitCode()
+  ├── .Exited()
+  └── .Success()
+```
+
+### Usos Probables de os/exec en el AC
+
+1. **Queries WMI alternativas**: `wmic cpu get ProcessorId /value` (fallback si COM falla)
+2. **PowerShell para HWID**: `Get-WmiObject -Class Win32_DiskDrive | Select SerialNumber`
+3. **bcdedit**: `bcdedit /enum` para detectar modos de debug del kernel
+4. **sc query**: detectar servicios de cheats o bypasses instalados
+5. **netstat**: verificar conexiones activas del juego vs esperadas
+
+### Bypass
+
+- Hookear `CreateProcess` / `CreateProcessW` en kernel32.dll
+- Retornar salida limpia que no delate nada sospechoso
+- Alternativamente: hookear `O2WU0BYsD.(*SGUe_Ecp).Output` directamente
+
+---
+
+## Vector 20 — Motor de Detección `hlavBkMcO` (644 Verificaciones)
+
+El paquete `pdFrspK_G` contiene la función `hlavBkMcO` con **644 sub-closures**,
+cada una representando una verificación de detección individual.
+
+```
+pdFrspK_G.hlavBkMcO
+├── func1   ... func~150  → Verificaciones de memoria (ReadProcessMemory)
+├── func~151... func~300  → Verificaciones de ConVars Source Engine
+├── func~301... func~450  → Verificaciones de procesos/ventanas/DLLs
+├── func~451... func~550  → Verificaciones de tráfico de red
+└── func~551... func~644  → Verificaciones de archivos y configuración
+```
+
+### Diferencia con Firmas Estáticas (Vector 16)
+
+| Aspecto | Firmas Estáticas (`ra_94HIlnc6`) | Motor `hlavBkMcO` |
+|---------|----------------------------------|-------------------|
+| Total | 778 patrones | 644 verificaciones |
+| Registro | En `init()` como tabla | Ejecutado directamente |
+| Tipo | Pattern matching de bytes | Lógica de detección activa |
+| Extensible | Sí (servidor envía más) | No (hardcoded en binario) |
+| Detectable | Sí (frida/hook de Feed) | Requiere tracing completo |
+
+### Bypass
+
+Para bypassear `hlavBkMcO` se requiere análisis dinámico completo:
+
+```
+1. Adjuntar frida/dbg al proceso l4d2c_anticheat.exe
+2. Resolver dirección de pdFrspK_G.hlavBkMcO en memoria
+3. Trazar cada llamada a dUgTofmw.(*fcje4l4dl_uV).Feed
+4. Identificar qué closures disparan Feed (= qué detecta)
+5. Patchear o hookar esas closures específicas para no reportar
+```
+
+---
+
 ## Tiempos Estimados de los Checks
 
 | Vector de detección | Intervalo estimado |

@@ -757,7 +757,7 @@ en número de firmas estáticas.
 | 2 | Blacklist ventanas (EnumWindows + regex) | Fácil — renombrar/ocultar |
 | 3 | Blacklist procesos (Toolhelp32) | Fácil — renombrar proceso |
 | 4 | Módulos DLL del juego | Media — manual mapping |
-| 5 | HWID fingerprinting (WMI) | Media — hook ExecQuery |
+| 5 | HWID fingerprinting — WMI pipeline (`FXWqsvy_`) | Media — hook cada colector en Z6ey1EJD |
 | 6 | Heartbeat gRPC | N/A si no hay ban |
 | 7 | gopsutil monitoring | Media — VM aislada |
 | 8 | Screenshots (BitBlt) | Alta — evidencia irrefutable |
@@ -768,8 +768,73 @@ en número de firmas estáticas.
 | 13 | Anti-debugger WMI PerfOS | Alta — depuración remota |
 | 14 | Hash de VPKs | Fácil — no tener VPKs cheat |
 | 15 | Captura de paquetes (gopacket/pcap) | Muy Alta — VM con NIC virtual |
-| 16 | **778 firmas hardcoded (NUEVA)** | Alta — polimorfismo o código limpio |
+| 16 | 778 firmas hardcoded | Alta — polimorfismo o código limpio |
 | 17 | Toast notifications | N/A (informativo) |
 | 18 | System tray | N/A (informativo) |
+| 19 | **os/exec — procesos del sistema** | Media — hookear CreateProcess |
+| 20 | **hlavBkMcO 644 verificaciones activas** | Muy Alta — análisis dinámico total |
 | Source Engine ConVars | Scanner `sOAbtRgFLa6_` | Media — hook ReadProcessMemory |
 | Certificate pinning | TLS cert hardcoded | Alta — hookear tls.Conn |
+| Pipeline HWID completo | `asYMlWeBL6f6` → `A39Z4i` → `FXWqsvy_` → `BhCuafOD` → `dUgTofmw` | Media (múltiples hooks) |
+
+---
+
+## Bypass Vector 19 — os/exec (Procesos Externos)
+
+El paquete `O2WU0BYsD` = `os/exec` permite al AC ejecutar comandos del sistema.
+
+```
+Usos probables:
+  wmic cpu get ProcessorId     → fallback HWID si COM falla
+  bcdedit /enum                → detectar modo debug del kernel
+  sc query                     → detectar servicios de cheats
+  powershell Get-WmiObject     → queries WMI alternativas
+
+Bypass:
+  1. Hook CreateProcessW en kernel32 para interceptar comandos
+  2. Para "wmic" o "powershell": substituir stdout con output limpio
+  3. Método más quirúrgico: hook O2WU0BYsD.(*SGUe_Ecp).Output
+     directamente en el proceso AC con frida
+```
+
+---
+
+## Bypass Vector 20 — hlavBkMcO 644 Verificaciones
+
+### Plan de Análisis Dinámico Completo
+
+```
+Fase 1 — Preparación:
+  VM limpia Windows 11, L4D2 vanilla, frida 16.x
+
+Fase 2 — Baseline (estado limpio):
+  Ejecutar AC + L4D2 sin mods
+  Logear TODAS las llamadas a dUgTofmw.(*fcje4l4dl_uV).Feed
+  Identificar qué closures de hlavBkMcO se activan normalmente
+  Este es el "estado base" esperado — no se reporta nada
+
+Fase 3 — Identificación de detecciones:
+  Introducir cheat conocido (aimbot simple)
+  Observar qué closures adicionales disparan Feed
+  Esas closures = las que detectan ese cheat específico
+  Repetir con diferentes tipos de cheats
+
+Fase 4 — Construcción del bypass:
+  Para cada closure que queremos silenciar:
+    Hookear la closure para que no llame Feed
+    O: filtrar eventos en Feed antes de que lleguen al evaluador
+  Verificar que el AC no crashea
+  Verificar que la detección está desactivada
+
+Fase 5 — Bypass HWID:
+  Hookar FXWqsvy_.Z6ey1EJD.func1..func11
+  Reemplazar seriales con valores de máquina limpia
+  Confirmar que servidor responde Success=true
+
+Herramientas:
+  frida >= 16.0    hooking dinámico
+  x64dbg           análisis estático
+  Ghidra+GoReSym   decompilación con nombres
+  Process Monitor  syscalls
+  Wireshark        tráfico gRPC post-TLS-bypass
+```
