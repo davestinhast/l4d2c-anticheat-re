@@ -52,11 +52,15 @@ El AC es un proceso separado (no inyectado en el juego). Usa `ReadProcessMemory`
 
 ## Vector 2 — Títulos de Ventana (EnumWindows)
 
-El AC enumera todas las ventanas del sistema con `EnumWindows` + `GetWindowTextW` y verifica cada título contra la blacklist de substrings.
+El AC enumera todas las ventanas del sistema con `EnumWindows` + `GetWindowTextW` y verifica cada título contra la blacklist.
+
+**Método de matching: REGEX** — confirmado por la presencia del paquete `ncRaYk_Ke` = `regexp/regexp/syntax` con el método `MatchRune`. Las strings de la blacklist son probablemente compiladas en una expresión regular combinada del tipo `(?i)(x32dbg|pc-ret|ghidra|...)` para matching eficiente.
 
 Ver `analysis/listas_negras.md` para la lista completa.
 
 Goroutine 3 ejecuta este check cada ~5-10 segundos.
+
+**Implicación para el bypass:** Renombrar la ventana del debugger puede evadir este check SOLO si el regex usa anchors o patterns exactos. Si usa `(?i)x32dbg` como substring, cualquier nombre que NO contenga `x32dbg` evade el check.
 
 ---
 
@@ -65,6 +69,8 @@ Goroutine 3 ejecuta este check cada ~5-10 segundos.
 Enumeración de procesos del sistema via WMI (`Win32_Process`) o `CreateToolhelp32Snapshot`.
 
 El package `_6di6zc0se2v` (WatchList) gestiona la vigilancia continua de procesos.
+
+**Método de matching: REGEX** — igual que Vector 2, las strings de la blacklist de procesos se compilan en un patrón regex. El paquete `bszAWJqu` (posiblemente el escáner de procesos/ventanas) usa `ncRaYk_Ke` (regexp) para matching.
 
 ---
 
@@ -95,15 +101,19 @@ Estimado: cada ~120 segundos (interval aleatorio para dificultar la predicción)
 
 ## Vector 6 — Validación de Estado del Juego (Source Engine)
 
-String encontrada: `i4localSurvivorGunFire`
+String encontrada en binario (offset 29623296): `i4localSurvivorGunFire`
 
-Este es el nombre de un ConVar/netprop del Source Engine. El AC probablemente lee la memoria del juego en offsets específicos para verificar valores de la simulación, detectando:
+Este string es el nombre de una variable interna del Source Engine. El AC lo usa probablemente como **anchor para localizar la ConVar table en memoria** — busca el string `i4localSurvivorGunFire` en el espacio de memoria del proceso del juego con `ReadProcessMemory`, luego navega la estructura de datos del Source Engine para leer valores de estado del juego.
 
+Detecta:
 - Valores imposibles (ej: salud de survivor fuera de rango)
 - Velocidad de disparo anormal
-- Flags de godmode/noclip activados
+- Flags de godmode/noclip activados vía ConVar
+- Estado de cheat commands (`sv_cheats`, etc.)
 
-Esto sugiere que el AC realiza **validación de estado de juego** además de escaneo de firmas — un método más sofisticado que detecta cheats que modifican directamente los valores del juego en memoria.
+Esto sugiere que el AC realiza **validación de estado de juego** además de escaneo de firmas — método que detecta cheats que modifican directamente los valores del juego en memoria sin inyectar código.
+
+**Bypass:** No práctico sin entender exactamente qué valores compara. Requeire análisis dinámico para ver qué offsets se calculan desde el anchor.
 
 ---
 

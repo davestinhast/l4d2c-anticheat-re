@@ -29,17 +29,17 @@ de detección del AC. Basado 100% en análisis estático del binario.
 
 **Cómo funciona la detección:**
 El AC llama `EnumWindows` + `GetWindowTextW` cada ~5-10 segundos.
-Compara el título de cada ventana con los tokens de la blacklist:
+Las strings de la blacklist son compiladas en un patrón **regex** por `ncRaYk_Ke` (= `regexp` stdlib de Go) para matching eficiente. El patrón probablemente es del tipo:
 ```
-common addon x32dbg pc-ret centos windbg dbg clrde 4dot pepperghidra
-hacker x96dbg folder sysmon timer efence lect scalar
+(?i)(x32dbg|pc-ret|centos|windbg|dbgclr|de4dot|pepper|ghidra|hacker|...)
 ```
 
 **Bypass:**
-1. **Renombrar la ventana**: `SetWindowTextW(hwnd, L"")` — título vacío no hace match
-2. **Ocultar la ventana del tool**: `ShowWindow(hwnd, SW_HIDE)` — ventana oculta, no enumerable
+1. **Renombrar la ventana**: `SetWindowTextW(hwnd, L"")` — título vacío no hace match contra ningún regex
+2. **Ocultar la ventana del tool**: `ShowWindow(hwnd, SW_HIDE)` — ventana oculta, no enumerable por `EnumWindows`
 3. **Cambiar el título temporalmente**: El AC checkea cada 5-10 segundos. Un hook en
    `GetWindowTextW` puede retornar un título falso cuando el AC llama.
+4. **Si el regex usa substrings**: basta con que el título NO contenga ninguno de los tokens. Un título como `"ANALYSIS_TOOL_01"` no haría match con ningún pattern conocido.
 
 **Hook de GetWindowTextW:**
 ```cpp

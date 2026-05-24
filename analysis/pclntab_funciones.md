@@ -70,17 +70,32 @@ main.main.func7
 
 ### Observaciones
 
-**`main.QSUMsCa`** es la función más notable del listado. Tiene:
-- 4 gowrap variants → se lanza como goroutine en 4 contextos diferentes
-- 6 sub-funciones con closures anidadas (func4.1)
-- Posible rol: dispatcher del loop de detección, agregador de eventos, o monitor de conexión
+**`main.QSUMsCa`** es la función más notable del listado. Análisis confirmado por búsqueda en pclntab:
+
+Funciones inlined EN su código (aparecen entre `main.QSUMsCa` y `main.QSUMsCa.gowrap4` en la memoria):
+```
+ncRaYk_Ke.FS0IhhJL                        — regexp function (inlined)
+d8a0oX50i.FJYZBfxOBhA[go.shape.int32]    — generic comparison/sort para int32 (inlined)
+ncRaYk_Ke.MDfyjAe                         — regexp function (inlined)
+ncRaYk_Ke.RaR0kkqIl                       — regexp function (inlined)
+i7OyDUpCDA3q.D5UnAj                       — helper function (inlined)
+```
+
+Sub-closures de QSUMsCa (adicionales a func1-func6):
+```
+main.QSUMsCa.MDfyjAe.func7    — closure dentro de QSUMsCa, sub-func 7 de MDfyjAe
+main.QSUMsCa.RaR0kkqIl.func8  — closure dentro de QSUMsCa, sub-func 8 de RaR0kkqIl
+```
+
+La presencia de múltiples funciones regexp inlined sugiere que `QSUMsCa` realiza **compilación y matching de expresiones regulares** — probablemente construye el regex del blacklist combinado a partir de los strings individuales y lo aplica contra procesos/ventanas. El generic `FJYZBfxOBhA[go.shape.int32]` indica comparación/sorting de int32 (posiblemente PIDs de procesos).
 
 **`main.(*fyBBzjy).Replace`** — el método `Replace` en un tipo garblado sugiere:
 - Reemplazo de strings en paths de archivos (para normalizar rutas de VPKs)
 - Sanitización de datos antes de enviar al servidor
-- Posiblemente el buffer de reporte que "reemplaza" datos sensibles
 
 **`main.FLqUmcop`** — función helper directamente llamada desde el flow de ConnectL4D2Server, probablemente para inicializar la sesión o configurar el estado.
+
+**`bszAWJqu`** — paquete nuevo encontrado: tiene `FkjkBraZo` (15 closures + deferwrap) y `IvOAAX` (inlined en FrontendReady.func1). También usa regexp (`ncRaYk_Ke`). Candidato al escáner de procesos/ventanas.
 
 ---
 
