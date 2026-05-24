@@ -200,7 +200,7 @@ dUgTofmw.P6t_tYOk5O8           — función con 4 sub-goroutines + deferwrap
 dUgTofmw.pV5JbQn9WF            — función con sub-goroutines anidadas
 dUgTofmw.pZV38F2F5p6H          — función de análisis
 dUgTofmw.Q100bRnHXe            — función de análisis
-dUgTofmw.rpfbMOh               — función con 4 sub-goroutines
+dUgTofmw.rpfbMOh               — función con 4 sub-goroutines [CONFIRMADO: llama a WvPUk5UlmHG.(*USEy__R7Bor9).CmdlineSlice — lee la línea de comandos del proceso left4dead2.exe]
 dUgTofmw.t5rfyIM               — función con 2 sub-goroutines
 dUgTofmw.t6BMqE0               — función con 1 sub-goroutine
 dUgTofmw.T7nZWPA_QXN           — función con 1 sub-goroutine

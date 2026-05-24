@@ -1,7 +1,8 @@
 # Monitoreo del Proceso del Juego — gopsutil
 
-El AC usa la biblioteca Go `gopsutil` (o una versión interna similar) para monitorear el
-proceso `left4dead2.exe` con un nivel de detalle inusual para un anticheat de juego.
+El AC usa la biblioteca Go `github.com/shirou/gopsutil/v3/process` (paquete garbled `WvPUk5UlmHG`)
+para monitorear el proceso `left4dead2.exe` con un nivel de detalle inusual para un anticheat de juego.
+El paquete gopsutil es llamado directamente desde el motor de detección (`dUgTofmw.rpfbMOh`).
 
 ---
 
@@ -97,20 +98,50 @@ código externo interferiendo con el proceso del juego.
 
 ---
 
-## Paquete Go — sNAkh4
+## Paquete Go — WvPUk5UlmHG (gopsutil/v3/process)
 
-El paquete `sNAkh4` (garbled) implementa el wrapper de gopsutil:
+**CORRECCIÓN:** El paquete que implementa el monitoreo de proceso via gopsutil es `WvPUk5UlmHG`,
+NO `sNAkh4`. `sNAkh4` es el paquete de monitoreo de red (usa `q4ajG0RM` = gopacket como dependencia).
+
+Identificación de `WvPUk5UlmHG` = `github.com/shirou/gopsutil/v3/process` confirmada por:
+- Métodos con Context encontrados en pclntab: `CmdlineWithContext`, `CmdlineSliceWithContext`, `NameWithContext`, `CreateTimeWithContext`
+- Struct principal: `(*USEy__R7Bor9)` — equivale a `gopsutil/process.Process`
+- Métodos en tabla de tipos: `CPUPercent`, `CreateTime`, `Foreground`, `IOCounters`, `MemoryInfo`, `MemoryMaps`, `NumThreads`, `PageFaults`, `SendSignal`
+- Llamado directamente desde `dUgTofmw.rpfbMOh` para leer la cmdline del proceso del juego:
+  `dUgTofmw.rpfbMOh` → `WvPUk5UlmHG.(*USEy__R7Bor9).CmdlineSlice`
 
 ```
-sNAkh4.cd1Utgxh0      — inicialización del monitor de proceso
-sNAkh4.gvBDt2BpBt7    — goroutine de monitoreo continuo
-sNAkh4.ySbqKa9f0p     — handler de resultados de monitoreo
-sNAkh4.Rs0QF1nUdhgw   — tipo de resultado de monitoreo
-sNAkh4.UWzc59         — tipo de estado del proceso
-sNAkh4.encTsS0_       — codificación de resultados
-sNAkh4.GrRzvM2        — función de inicio del monitor
-sNAkh4.vaf3j0Z        — validación de proceso
-sNAkh4.wqT1oO         — loop de monitoreo
+WvPUk5UlmHG.(*USEy__R7Bor9)   — struct Process de gopsutil (representa left4dead2.exe)
+WvPUk5UlmHG.CmdlineWithContext      — línea de comandos completa
+WvPUk5UlmHG.CmdlineSliceWithContext — línea de comandos como slice
+WvPUk5UlmHG.NameWithContext         — nombre del proceso
+WvPUk5UlmHG.CreateTimeWithContext   — timestamp de creación del proceso
+WvPUk5UlmHG.(*USEy__R7Bor9).CPUPercent   — porcentaje de CPU
+WvPUk5UlmHG.(*USEy__R7Bor9).MemoryInfo   — información de memoria
+WvPUk5UlmHG.(*USEy__R7Bor9).MemoryMaps   — mapa de regiones de memoria
+WvPUk5UlmHG.(*USEy__R7Bor9).NumThreads   — número de threads
+WvPUk5UlmHG.(*USEy__R7Bor9).PageFaults   — page faults
+WvPUk5UlmHG.(*USEy__R7Bor9).IOCounters   — bytes I/O
+WvPUk5UlmHG.(*USEy__R7Bor9).Foreground   — si está en foreground
+WvPUk5UlmHG.(*USEy__R7Bor9).SendSignal   — enviar señal al proceso
+```
+
+---
+
+## Paquete Go — sNAkh4 (monitoreo de red, NO gopsutil)
+
+`sNAkh4` es el paquete de **monitoreo de red** del AC, no gopsutil. Usa `q4ajG0RM`
+(gopacket) como dependencia para captura y decodificación de paquetes de red.
+
+```
+sNAkh4.cd1Utgxh0      — inicialización del monitor de red
+sNAkh4.gvBDt2BpBt7    — goroutine de captura de paquetes
+sNAkh4.ySbqKa9f0p     — handler de paquetes capturados
+sNAkh4.GrRzvM2        — implementa SetNetworkLayer (interfaz gopacket)
+sNAkh4.encTsS0_       — codificación/serialización de datos de red
+sNAkh4.vaf3j0Z        — validación de paquetes
+sNAkh4.wqT1oO         — loop principal de captura
+sNAkh4.eeWJva_vkG     — procesamiento por lotes (arrays de 8 elementos)
 ```
 
 ---

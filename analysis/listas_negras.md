@@ -8,35 +8,39 @@ fueron encontradas mediante búsqueda cruda del binario en PowerShell.
 
 ## Blacklist 1 — Títulos de Ventana (EnumWindows + GetWindowTextW)
 
-String combinada encontrada en el binario:
+String combinada confirmada por hex dump (offset 0x01C24134):
 
 ```
-commonaddonsx32dbgpc-retCentoswindbgdbgclrde4dotpepperghidrahackerx96dbgfoldersysmontimersefenceselectscalar
+%s%s%scommonaddonsx32dbgpc-retCentoswindbgdbgclrde4dotpepperghidrahackerx96dbgfoldersysmontimersefenceselectscalar
 ```
 
-Desglosada en tokens individuales:
+**Nota importante:** `%s%s%s` y `commonaddons` son strings de construcción de path del directorio
+de addons — NO son tokens de la blacklist. La blacklist de ventanas empieza en `x32dbg`.
+
+Tokens de la blacklist de ventanas (16 entries, todos de 6 caracteres exactos):
 
 | Token | Herramienta / Descripción |
 |-------|--------------------------|
-| `commonaddons` | Referencia a addons conocidos (uso incierto) |
 | `x32dbg` | x32dbg — debugger para procesos 32-bit |
 | `pc-ret` | PC Ret — herramienta de análisis de PC |
-| `Centos` | CentOS — detección posible de VM Linux |
+| `Centos` | CentOS — posible detección de VM Linux/WSL |
 | `windbg` | WinDbg — debugger de Microsoft |
-| `dbgclr` | DbgCLR — debugger de runtime .NET |
+| `dbgclr` | DbgCLR — debugger de runtime .NET (Visual Studio) |
 | `de4dot` | de4dot — deobfuscador de assemblies .NET |
 | `pepper` | Pepper Flash / componente Chromium |
 | `ghidra` | Ghidra — framework de RE de la NSA |
 | `hacker` | Ventanas con "hacker" en el título |
-| `x96dbg` | Variante de x64dbg / x96dbg |
-| `folder` | Posiblemente "SteamHacker" u otras tools |
-| `sysmon` | Sysinternals SysMon (process monitor) |
+| `x96dbg` | Variante de x64dbg |
+| `folder` | Posiblemente Windows Explorer con carpeta sospechosa abierta |
+| `sysmon` | Sysinternals SysMon |
 | `timers` | Herramientas de timers/profiling |
-| `efence` | Electric Fence — memory debugger |
-| `selectscalar` | Posiblemente herramienta de análisis de memoria |
+| `efence` | Electric Fence — memory debugger (Linux) |
+| `select` | Herramienta con "select" en el título |
+| `scalar` | Herramienta con "scalar" en el título |
 
 El AC usa `EnumWindows` + `GetWindowTextW` para iterar todas las ventanas del sistema
-y compara el título contra estos tokens (case-sensitive, substring match probable).
+y compara el título contra estos tokens. Método de matching: REGEX (paquete `ncRaYk_Ke` = `regexp`),
+probablemente patrón combinado `(?i)(x32dbg|pc-ret|Centos|windbg|...)` para matching eficiente.
 
 ---
 
@@ -134,23 +138,29 @@ Contexto en el binario:
 k1e1y*.vpkstartdnspyilspyILSpypizzacrackida -brutejamesDebug/auth
 ```
 
-Tokens desglosados:
+Tokens confirmados por hex dump (offset 0x01C1E1E8):
 
-| Token | Herramienta / Descripción |
-|-------|--------------------------|
-| `start` | Posiblemente "startdebug" — procesos que inician con "start" |
-| `dnspy` | dnSpy — decompilador y debugger de .NET / C# |
-| `ilspy` | ILSpy — decompilador de .NET / C# |
-| `ILSpy` | ILSpy (case-sensitive, variante) |
-| `pizza` | Pizza (herramienta de cheating conocida para Source games) |
-| `crack` | Genérico — ventanas/procesos con "crack" en el nombre |
-| `ida` | IDA Pro — el disassembler/debugger más popular |
-| `-brute` | Parámetro de fuerza bruta — detecta si se lanza con este argumento |
-| `james` | James (herramienta o cheat conocido) |
-| `Debug` | Genérico — ventanas/procesos con "Debug" en el nombre |
+| Token | Longitud | Herramienta / Descripción |
+|-------|----------|--------------------------|
+| `start` | 5 | Procesos/ventanas con "start" en el nombre (propósito incierto) |
+| `dnspy` | 5 | dnSpy — decompilador y debugger de .NET / C# |
+| `ilspy` | 5 | ILSpy — decompilador de .NET / C# |
+| `ILSpy` | 5 | ILSpy (variante case-sensitive para regex) |
+| `pizza` | 5 | Pizza — cheat conocido para Left 4 Dead 2 |
+| `crack` | 5 | Genérico — ventanas/procesos con "crack" |
+| `ida -` | 5 | **IDA Pro** — patrón de título de ventana "IDA - [filename]" |
+| `brute` | 5 | Herramientas de fuerza bruta |
+| `james` | 5 | James (herramienta o cheat) |
+| `Debug` | 5 | Genérico — ventanas/procesos con "Debug" |
 
-Nota: el token `ida` detecta IDA Pro (tanto `ida.exe` como `ida64.exe`).
-El `pizza` es un cheat conocido para Left 4 Dead 2.
+**CORRECCIÓN CRÍTICA:** El token es `ida -` (5 bytes: `69 64 61 20 2D`) — no `ida` (3 bytes).
+El espacio y guión son parte del patrón, diseñado para capturar el título de IDA Pro
+(`IDA - nombre_archivo.exe`). Renombrar el ejecutable NO evita la detección si la ventana
+tiene este título; hay que cambiar también el título de la ventana de IDA.
+
+`pizza` es un cheat conocido para Left 4 Dead 2.
+`start` — propósito exacto no confirmado, posiblemente detecta el comando `start.exe` de Windows
+o algún launcher con ese nombre.
 
 ---
 
@@ -201,11 +211,14 @@ APIs cargadas por ordinal (sin strings visibles): `ReadProcessMemory`, `OpenProc
 ## Bypass de las Blacklists
 
 ### Para títulos de ventana (Blacklists 1, 4)
-El chequeo es por substring en el título. Renombrar la ventana o usar la opción
-de configuración del título en el debugger resuelve el problema en la mayoría de casos:
+El chequeo es por substring REGEX en el título. Renombrar la ventana o usar la opción
+de configuración del título en el debugger resuelve el problema:
 - `x32dbg`: Options → Preferences → GUI → cambiar título de ventana
 - `ghidra`: renombrar en el launcher o modificar via agente Java
-- `IDA Pro`: usar IDA con la ventana minimizada o renombrada
+- `IDA Pro`: **El patrón es `ida -` (con espacio-guión).** Renombrar `ida64.exe` no basta —
+  el TÍTULO de la ventana debe evitar el patrón `ida -`. Usar IDA en modo batch o cambiar
+  el título programáticamente (script IDA: `idc.set_inf_attr(idc.INF_APPTYPE, ...)` o renombrar
+  el archivo abierto)
 
 ### Para procesos (Blacklistas 2, 3, 4)
 El nombre del ejecutable es lo que se compara. Renombrar el binario evita la detección:
