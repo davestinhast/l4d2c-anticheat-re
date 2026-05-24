@@ -73,10 +73,11 @@ Certificate Pinning: NO (usa el store de certificados de Windows)
 - Vigilancia de módulos DLL cargados en el proceso del juego
 - Capturas periódicas de pantalla como evidencia
 
-### Motor de Detección Principal (dUgTofmw.ga4oovjHCfg — 34 goroutines)
-- 31 goroutines de detección numeradas + 3 sub-closures
+### Motor de Detección Principal (dUgTofmw.ga4oovjHCfg — 37 closures)
+- 33 goroutines de detección numeradas (func1–func33) + 4 sub-goroutines anidadas (func9.1, func12.1, func21.1, func28.1)
 - Cada goroutine maneja un vector de detección independiente
-- Posible paralelización: scan de ventanas, procesos, memoria, módulos, network
+- Patrón productor-consumidor: `(*fcje4l4dl_uV).Feed` alimenta datos entre goroutines
+- Paralelización: scan de ventanas, procesos, memoria, módulos, network
 
 ---
 
@@ -127,7 +128,8 @@ proto/
 
 ### Detección
 - **CheatSigs dinámicos** — patrones de bytes descargados del servidor en cada sesión
-- **Blacklist de 35+ herramientas RE** incluyendo: Ghidra, x32dbg, WinDbg, IDA Pro, de4dot, dnSpy, Fiddler, Aimware, y otros
+- **Blacklist de 35+ herramientas RE** incluyendo: Ghidra, x32dbg, WinDbg, IDA Pro, de4dot, dnSpy, Fiddler, aimware, y otros
+- **Endpoint gRPC `/auth`** confirmado — encontrado en string table inmediatamente después de la blacklist
 - **Búsqueda de VPKs** con patrón glob `k1e1y*.vpk` para cheats conocidos de L4D2
 - **Screenshot automático** cada ~120s como evidencia de ban (PNG NRGBA)
 
@@ -145,9 +147,9 @@ proto/
 - `BEwVDQOh5` = `encoding/xml` de Go (no sistema de tokens)
 
 ### Goroutines (150+ en total durante monitoreo activo)
-- Startup: 87 goroutines
+- Startup: 87 goroutines (incluyendo Wails + runtime)
 - ConnectL4D2Server: 4 goroutines principales
-- Motor de detección (ga4oovjHCfg): 34 goroutines de detección paralela
+- Motor de detección (ga4oovjHCfg): 37 closures (33 goroutines de detección + 4 sub-goroutines anidadas)
 - StartL4D2: 5 goroutines de monitoreo del juego
 
 ---

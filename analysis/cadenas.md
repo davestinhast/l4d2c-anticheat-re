@@ -15,6 +15,20 @@ https://l4d2center.com/0
 "version": "2.0.0"
 ```
 
+## Endpoints del Servidor
+
+Encontrados en el string table del binario (offset 29483548), inmediatamente después de
+las blacklists de herramientas RE:
+
+```
+/auth    ← ruta de autenticación gRPC — aparece después de la blacklist de RE tools
+           contexto: "...k1e1y*.vpkstartdnspyilspyILSpypizzacrackida -brutejamesDebug/auth"
+```
+
+El path `/auth` confirma que el AC llama a un endpoint gRPC llamado `auth` (o similar)
+en `https://l4d2center.com/0/auth` o como parte del path gRPC completo
+`/package.Service/Auth`. El `/0` en la URL base puede ser la versión del API.
+
 ## Wails Frontend (JS Bridge Embebido)
 
 ```javascript
@@ -82,14 +96,19 @@ commonaddonsx32dbgpc-retCentoswindbgdbgclrde4dotpepperghidrahackerx96dbgfoldersy
 ## Blacklist de Procesos
 
 ```
-gdb.exe       reverse       processharp   od
+gdb.exe       reverse       process       sharpod
 fiddler       x64_dbg       petools       monitor
 ollydbg       wpe pro       PhantOm       x32_dbg
 phantom       WPE PRO       charles       checker
 harmony       PETools       sniffer       MDBCrew
-DIEmW         inMonitor     Discord       Opera
+DIEmW         WinMonitor    Discord       - Opera
 cmd.exe       fdm.exe       zen.exe       Arc.exe
+aimware
 ```
+
+**Nota:** `process` y `sharpod` son dos entradas separadas (antes estaban concatenadas por
+error de extracción). `WinMonitor` es la forma correcta (no `inMonitor`).
+`aimware` es el cheat externo más detectado — aparece explícitamente como string.
 
 ## Clases WMI (Fingerprinting de Hardware)
 
@@ -200,6 +219,48 @@ zen.exe   (Zen Browser)
 Arc.exe   (Arc Browser)
 cmd.exe   (Command Prompt)
 ```
+
+## Tipos Exportados — Tabla de Tipos del Runtime Go
+
+Nombres de tipos y campos que sobrevivieron la ofuscación de garble. Go embebe en el
+binario los nombres de cualquier campo o tipo que sea exportado (primera letra mayúscula)
+y usado en reflexión, JSON/protobuf tags, o interfaz de paquetes externos.
+Encontrados en la tabla de tipos del binario (offset ~29505000–29530000).
+
+### Structs Propios del AC (nombres completos visibles)
+
+| Tipo | Descripción |
+|------|-------------|
+| `BannedWriter` | HTTP response writer personalizado para respuestas de ban |
+| `RequestBlocked` | Struct para requests bloqueados — el AC tiene lógica de bloqueo propio |
+| `EntityEngine` | Motor de detección de entidades del juego (proceso/ventana/módulo) |
+| `OSInfo` | Struct de información del sistema operativo (alias amigable de campos WMI) |
+| `HWInfo` | Struct de información de hardware completa |
+| `GPUInfo` | Struct de información de GPU (wrapper de `BlhNU1RKfjg`) |
+| `SubCpu` | Sub-componente de CPU — posiblemente núcleos individuales o threads |
+
+### Campos Protobuf Confirmados (sobrevivieron garble por ser exported)
+
+| Campo | Tipo probable | Descripción |
+|-------|--------------|-------------|
+| `Caught` | bool | Flag de detección positiva — el jugador "fue atrapado" |
+| `Active` | bool | Estado activo del componente de detección |
+| `AddonsExtern` | repeated bytes | Addons externos no registrados en el servidor |
+| `NumberHeight` | int64 | Dimensión — alto de pantalla o resolución capturada |
+| `Cores` | int64 | Núcleos de CPU (de Win32_Processor.NumberOfCores) |
+| `UseH2` | bool | Flag para forzar uso de HTTP/2 en la conexión gRPC |
+| `Product` | bytes | Producto de software detectado (nombre del cheat) |
+| `Audio` | bytes | Información de dispositivo de audio (posible vector HWID adicional) |
+| `Width` | int64 | Ancho de pantalla o captura enviada como evidencia |
+
+### Tipos de Red y Comunicación
+
+| Tipo | Descripción |
+|------|-------------|
+| `UseH2` | Flag de configuración HTTP/2 |
+| `BannedWriter` | Custom response writer del handler de ban (el cliente embebe parte del servidor gRPC) |
+
+---
 
 ## Stack Size del Binario
 
