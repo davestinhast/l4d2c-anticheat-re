@@ -382,6 +382,96 @@ que monitorea.
 
 ---
 
+## Vector 16 — Firmas de Detección Estáticas (778+ patrones hardcoded)
+
+Este vector es el **mayor descubrimiento de la sesión de RE**: el AC embebe **778 firmas de
+cheat registradas estáticamente en el binario** distribuidas en 5 paquetes de registros.
+Son **adicionales** a las CheatSigs descargadas del servidor (Vector 1).
+
+### Paquetes Identificados
+
+| Paquete | Firmas | Patrón |
+|---------|--------|--------|
+| `ra_94HIlnc6` | **299** | init.func1 — init.func299 (sub-closures .1, .1.1) |
+| `EyjsrRr` | **162** | init.func1 — init.func162 (sub-closures .1) |
+| `WGfDxX0zz2M` | **117** | init.func1 — init.func117 (sub-closures .1) |
+| `YCJ5PUz_M` | **116** | init.func1 — init.func116 (sub-closures .1) |
+| `kNpc1A53` | **84** | init.func1 — init.func84 (secuencial, sin gaps) |
+| **TOTAL** | **778** | Solo en estos 5 paquetes |
+
+### Cómo Funcionan
+
+```
+Al inicializar el binario (antes de conectar al servidor):
+  1. init() de cada paquete ejecuta N closures
+  2. Cada closure llama a una función de registro (en dUgTofmw o pdFrspK_G)
+  3. La firma se registra con su nombre y patrón de bytes
+  4. El motor de detección tiene 778 patrones listos OFFLINE
+
+Al conectar al servidor:
+  5. Se suman las CheatSigs descargadas (Vector 1) a las 778 locales
+  6. Total real de firmas puede superar 1000+ dependiendo del servidor
+```
+
+### Implicación para Bypass
+
+Las firmas estáticas **no se pueden eliminar actualizando el servidor**. Están en el
+binario. La única forma de saber qué detectan es:
+1. Análisis dinámico — ejecutar el binario en VM y hookar la función de registro
+2. Desofuscar el `decFunc` — las strings están cifradas con garble -literals
+
+### Comparación con Otros ACs
+
+- VAC (Valve): descarga todas las firmas del servidor → pueden verse en tráfico de red
+- EAC: mezcla de firmas locales + servidor, ~200-300 locales típicamente
+- L4D2Center: **778 firmas locales hardcoded** — más alto que EAC en firmas estáticas
+
+---
+
+## Vector 17 — Notificaciones Toast de Windows
+
+El AC envía notificaciones nativas de Windows (Toast Notifications) al usuario durante
+la sesión. Identificado por el paquete `Kd1BZ5fvE` con:
+
+```
+IToastNotificationManagerStatics.CreateToastNotifierWithId
+IToastNotification.Show
+```
+
+### Usos Probables
+
+1. **Notificación de ban**: "Fuiste baneado por usar [NombreCheat]"
+2. **Alertas del servidor**: Mensajes del sistema de L4D2Center
+3. **Estado del AC**: "AC activado", "AC desconectado"
+4. **Advertencias**: "Se detectó [herramienta sospechosa]"
+
+### Implicación para Análisis
+
+Las strings de las notificaciones están cifradas por garble -literals.
+El texto real solo se puede ver en análisis dinámico o hookeando
+`IToastNotification.Show` en `Kd1BZ5fvE`.
+
+---
+
+## Vector 18 — Sistema de Bandeja del Sistema (System Tray)
+
+El AC tiene un ícono en la bandeja del sistema con menú contextual. Identificado
+por el paquete `oFJMvWezJ9O` (148 funciones):
+
+```
+DNwmM3_M8: AddSubMenu, Dispose, IsDisposed, Show
+DS8RzXk3kAd: AddItem, AddItemCheckable, AddItemRadio
+XVcwgpKUXH: Text, ToggleVisible, Visible, Width
+```
+
+El menú del system tray puede incluir:
+- Estado de conexión al servidor
+- Versión del AC
+- Botón para cerrar / pausar
+- Links a soporte o Discord
+
+---
+
 ## Paquetes Stdlib Identificados con Rol en Detección
 
 Paquetes de librería estándar con impacto directo en los vectores de detección:

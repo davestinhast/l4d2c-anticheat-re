@@ -682,3 +682,94 @@ Las acciones del cheat deben ser rápidas y limpiar rastros antes del próximo t
 GOMAXPROCS limita los OS threads simultáneos. Una operación bloqueante larga en el
 thread principal puede retrasar las goroutines de detección por un quantum del scheduler.
 No es una técnica de bypass confiable pero es un dato interesante para timing.
+
+---
+
+## Vector 16 — Bypass de Firmas Estáticas Hardcoded (778 patrones)
+
+Esta es la nueva superficie de ataque más grande descubierta en este análisis.
+
+**Por qué es diferente a las CheatSigs del servidor:**
+- Las 778 firmas están COMPILADAS en el binario (no se pueden cambiar sin un nuevo release)
+- Se registran en el init() → disponibles ANTES de conectar al servidor
+- Las strings de nombres de firmas están cifradas por garble -literals
+- Sin análisis dinámico no se conocen los patrones exactos
+
+**Cómo identificar qué patrones están registrados (análisis dinámico necesario):**
+
+```python
+# El punto de registro es en dUgTofmw o pdFrspK_G
+# Al ejecutar en VM con frida/x64dbg, interceptar la función de registro:
+# Buscar en pclntab la función llamada desde EyjsrRr.init.func1
+# Hookar esa función → loggear todos los argumentos (nombre + patrón de bytes)
+
+# Con frida (requiere ejecutar en VM):
+import frida
+
+session = frida.attach("l4d2c_anticheat.exe")
+script = session.create_script("""
+    // Encontrar dirección de la función de registro de firmas
+    // desde pclntab, hookar y logear llamadas durante init()
+    var registerSig = ptr("0xXXXXXX");  // dirección de la función de registro
+    Interceptor.attach(registerSig, {
+        onEnter: function(args) {
+            console.log("Firma:", args[0].readUtf8String(), 
+                        "Patron:", args[1].readByteArray(args[2].toInt32()));
+        }
+    });
+""")
+script.load()
+""")
+```
+
+**Bypass:**
+
+1. **No tener en memoria ningún patrón conocido:**
+   - Las 778 firmas probablemente detectan: cabeceras PE de cheats conocidos, 
+     strings hardcoded de menús de cheats, magic bytes de frameworks (ImGui cheats, 
+     gmod cheats, etc.)
+   - Un cheat "limpio" (sin signatures conocidas) no sería detectado
+
+2. **Polimorfismo de código:**
+   - Cifrar el payload del cheat en memoria
+   - Descifrar solo al ejecutar, re-cifrar inmediatamente
+   - Las ventanas de scan del AC no verán el patrón
+
+3. **Reducir la huella de firmas conocidas:**
+   - No usar frameworks de cheats populares (que tendrían firmas específicas)
+   - Escribir código desde cero sin magic bytes reconocibles
+
+4. **Hookear la función de registro durante init():**
+   - Si se puede hookear la función de registro de firmas antes del init,
+     se puede vaciar la lista o modificar los patrones para que no hagan match
+
+**Nota crítica:** Las 778 firmas locales + las firmas descargadas del servidor suman
+potencialmente 1000+ patrones en runtime. Esto supera a la mayoría de ACs comerciales
+en número de firmas estáticas.
+
+---
+
+## Resumen Actualizado de Vectores y Bypass
+
+| Vector | Descripción | Dificultad Bypass |
+|--------|-------------|-------------------|
+| 1 | CheatSigs del servidor (bytes patterns) | Media — cifrar memoria |
+| 2 | Blacklist ventanas (EnumWindows + regex) | Fácil — renombrar/ocultar |
+| 3 | Blacklist procesos (Toolhelp32) | Fácil — renombrar proceso |
+| 4 | Módulos DLL del juego | Media — manual mapping |
+| 5 | HWID fingerprinting (WMI) | Media — hook ExecQuery |
+| 6 | Heartbeat gRPC | N/A si no hay ban |
+| 7 | gopsutil monitoring | Media — VM aislada |
+| 8 | Screenshots (BitBlt) | Alta — evidencia irrefutable |
+| 9 | A2S Query servidor | N/A — datos reales |
+| 10 | Anti-smurf (InstallDate) | Alta — múltiples factores |
+| 11 | Servidor HTTP local (Gin) | Media — análisis dinámico |
+| 12 | A2S_INFO validation | N/A |
+| 13 | Anti-debugger WMI PerfOS | Alta — depuración remota |
+| 14 | Hash de VPKs | Fácil — no tener VPKs cheat |
+| 15 | Captura de paquetes (gopacket/pcap) | Muy Alta — VM con NIC virtual |
+| 16 | **778 firmas hardcoded (NUEVA)** | Alta — polimorfismo o código limpio |
+| 17 | Toast notifications | N/A (informativo) |
+| 18 | System tray | N/A (informativo) |
+| Source Engine ConVars | Scanner `sOAbtRgFLa6_` | Media — hook ReadProcessMemory |
+| Certificate pinning | TLS cert hardcoded | Alta — hookear tls.Conn |
