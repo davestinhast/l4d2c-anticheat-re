@@ -45,14 +45,19 @@ y compara el título contra estos tokens (case-sensitive, substring match probab
 Strings encontradas en el binario para comparar contra la lista de procesos:
 
 ```
-gdb.exe         reverse         processharp     od
+gdb.exe         reverse         process         sharpod
 fiddler         x64_dbg         petools         monitor
 ollydbg         wpe pro         PhantOm         x32_dbg
 phantom         WPE PRO         charles         checker
 harmony         PETools         sniffer         MDBCrew
-DIEmW           inMonitor       Discord         Opera
+DIEmW           WinMonitor      Discord         - Opera
 cmd.exe         fdm.exe         zen.exe         Arc.exe
+aimware         cef.pak
 ```
+
+Nota: `cef.pak` es el Chromium Embedded Framework. La presencia de `cef.pak` + `aimware` juntos
+sugiere que detecta específicamente el cheat Aimware (que usa CEF para su interfaz gráfica).
+El substring `process` captura Process Monitor, Process Explorer, Process Hacker, etc.
 
 ### Categorías
 
