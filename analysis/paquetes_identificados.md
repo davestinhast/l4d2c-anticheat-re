@@ -13,11 +13,14 @@ La identificación se realizó por análisis de métodos, campos y comportamient
 | `dUgTofmw` | Motor de detección principal | 67 funciones, `ga4oovjHCfg` lanza 34 goroutines de detección |
 | `HWARRxN` | **`google.golang.org/protobuf/internal/filedesc`** — descriptor de archivo protobuf | `KbBU6bdOa.Build` = `filedesc.Builder.Build()`, `(*SLltHXdFZqty)` = FileDescriptor, `(*Yye7gKrP5)` = ServiceDescriptor (tiene `Methods()`), `(*WPaeyWXKC3et)` = MethodDescriptor (`Input`, `Output`, `IsStreamingClient`, `IsStreamingServer`), `(*Cv4Csm)` = MessageDescriptor, `(*TvQBJqp99aCj)` = FieldDescriptor |
 | `bszAWJqu` | **Subsistema de escaneo de blacklists** — escanea procesos, ventanas, módulos | 12 funciones top-level, usa 4 patrones regex compilados (uno por blacklist), funciones: `ThNOEr`, `OYQujSa6Aed5`, `FkjkBraZo`, `IvOAAX`, `ApxFkk`, `X10KDNt6j`, `LUb2wVKw`, `PlRmoX6cuU`, `CGKuSNjp`, `JnwG33U`, `E5nzMUH5qSwM`, `X80N6Rs52TTi` |
-| `P4mAKk` | Mensajes Protobuf del AC | 16 structs con campos Get*/Reset/String/ProtoReflect |
+| `P4mAKk` | **Paquete de mensajes Protobuf del AC** | 16 tipos de mensaje con getters completos. Ver tabla completa en sección `Structs Protobuf` y `protocolo_protobuf.md`. Principales: `BEt_icchsrxy` (auth request), `ENOV9d` (HWID), `Qi1Z8I` (ban response), `H1oahxz1l3iY` (server response con CheatSigs), `W99qYP` (cheat signature con Pattern de bytes) |
 | `x1JPPahi` | Contenedor de tipos de detección | Contiene ENOV9d, BiK8wj, W99qYP, Qi1Z8I, etc. |
-| `_6di6zc0se2v` | WatchList — vigilancia continua | Métodos Add, AddWith, Remove, WatchList, Close, Has |
+| `_6di6zc0se2v` | WatchList — vigilancia continua (= `sNAkh4` en type table) | 81 entradas en pclntab; tipos: `(*_o3YyW)` (manager), `(*GrRzvM2)` (nodo), `(*Rs0QF1nUdhgw)`, `(*UWzc59)` (colecciones Has/String); 5 init funcs = 5 categorías (ventanas, procesos, red, módulos, archivos); integra gopacket (`cd1Utgxh0`, `wqT1oO`, `encTsS0_`). Ver `watchlist.md` |
 | `DiU0jWi` | Detección de versión de Windows | `IsWindowsVersionAtLeast`, `RtlGetVersion` |
-| `asYMlWeBL6f6` | Wrapper WMI (COM/DCOM) | 24 funciones init, `WbemeDk0` = IWbemServices, `Aego3YEweIaU` = ExecQuery |
+| `asYMlWeBL6f6` | Wrapper WMI (COM/DCOM) | 31 funciones init (func1-func24 con sub-closures), `WbemeDk0` = IWbemServices, `VDjfdjV` = enumerador WMI, `Aego3YEweIaU` = ExecQuery |
+| `A39Z4i` | Ejecutor de queries WMI (librería Go WMI) | `(*DdY6Bn3b).Query` (con 4 deferwrap = 4 COM releases), `(*GNMRXRX).Query` = enumerador de resultados, `(*GUxA0QN3).Error` = tipo error WMI, `iFCNfGrVm5L` = función interna COM (16 closures), `wn2lrXVC` = setup de conexión |
+| `sOAbtRgFLa6_` | Subsistema de detección adicional | 2 funciones principales: `GXErxuFMY9Z` (func1/2/3) y `UxvaZNFzHI` (func1-func5 + sub-closures) — patrón similar a bszAWJqu pero con menos complejidad |
+| `xzFpaM3Mq3` | Paquete de gran tamaño (identificación pendiente) | 219 entradas no-init; función principal `iwhm6fWm4v` con 23+ closures; funciones: `ABiXzt`, `BfwDhHJq`, `CNAkvgt8dgry`, `DM1MqBwF1h74`, `G5tsEmkSGyTb`, `Gm3UquW`; posiblemente gRPC stream handler o protocolo de red |
 
 ---
 
@@ -50,6 +53,8 @@ La identificación se realizó por análisis de métodos, campos y comportamient
 | `uL6SGHSpk` | **`crypto/x509/pkix`** — no x509 directamente | `(*JjZ1WNQA).FillFromRDNSequence/ToRDNSequence/String` = `pkix.Name`, `(*IBvuTjv).HasExpired` = `pkix.CertificateList.HasExpired` (verificación de CRL), `(*Ap8xj8SrB).String` = `pkix.AlgorithmIdentifier` |
 | `LYUqBZOV7RHi` | **`crypto/x509`** — manejo de certificados X.509 | `(*XdDiONjbzcM)` = `x509.CertPool` (AddCert, Clone, AppendCertsFromPEM, Equal), `(*ZIbJOWC4).CheckSignature` = `x509.Certificate`, 31 funciones init (registro de algoritmos RSA/ECDSA/DSA) |
 | `OwbnEHL7gtm` | `gopacket` / librería 802.11 | Métodos Bandwidth, ShortGI, GuardInterval, MCSIndex, FECType, ReportZerolen, IsZerolen, LastKnown, DelimCRCErr |
+| `qTnr3tOf4N` | **DTLS / TLS-over-UDP** — implementación TLS para canal UDP seguro | 163 entradas; tipos: `(*ExZca80)` = SessionState, `(*Gy_XwjZ)` = Conn (conexión TLS), `(*vjSRqd6ov)` = record/paquete, `(*iTeUYgu)` = handshake config, `(*_ZyRwtuuaU)` = estado cliente, `(*vE6jf82QV)` = tipo alert/record, `(*JSj6sp1QG)` = cert/key, `(*QmRsQS5)` = factory (retorna `*ExZca80` o `*Gy_XwjZ`); referencias cruzadas a `l8F_pdQP` (x509.Certificate = `ZIbJOWC4`) y `eUmM3IpzIrV` |
+| `l8F_pdQP` | **`crypto/x509`** (nombre corto garbled) | = mismo paquete que `LYUqBZOV7RHi` (path garbled); `ZIbJOWC4` = x509.Certificate; `decFunc` = string literals garbled; diferencia: `l8F_pdQP` = package NAME en type table, `LYUqBZOV7RHi` = package PATH en pclntab |
 
 ---
 
@@ -78,12 +83,15 @@ La identificación se realizó por análisis de métodos, campos y comportamient
 | `PcTWfu` | **`crypto/aes`** — cifrado AES con AES-NI | `(*pAWn49)` = AES block cipher; `(*myqAnYT)` = AES-GCM; `(*pRzjXqs)`, `(*gU1WIgp)` = modos CBC/CFB; funciones ensamblador: `_expand_key_128/192a/192b/256a/256b` |
 | `pa9q8q` | Cifrado de bloque adicional (posiblemente `crypto/des` o `golang.org/x/crypto`) | `(*pXyC3Ai).BlockSize/Encrypt/Decrypt`, `(*lPQ6ELOmD).BlockSize/Encrypt/Decrypt` — estructura similar a crypto/des o chacha20 |
 | `AFdc2Qd` | **`math/big`** — aritmética de grandes números | Usado por RSA key operations en x509/TLS |
+| `aENMwam6VEd` | **`compress/gzip`** — compresión gzip | `(*HIpkYL9Ol).Multistream` = método exclusivo de `gzip.Reader`; métodos `Reset`, `Read`, `Close`; `(*HCy6tMrG_b).init` = writer init; `gKYJipeQ87s` = constructor; `AYHHDMBSV5y` = función auxiliar |
+| `nc95MRB` | Codificación genérica numérica (wire format protobuf) | `GnYb1tW3Fa[go.shape.int64/uint64/float64/string/int/uint16/uint8/uintptr]` = AppendVarint/AppendFixed64 genérico; `UlarnT3w16bk[go.shape.int/string/int32]` = codificador genérico; `l9Rx6xXOt[go.shape.float64]` = float encoder |
+| `m7wGi4U_E` | **`golang.org/x/sys/windows`** — DLL/syscall Windows | `(*JjnfzgPFB6W)` = LazyDLL (Load, Handle, NewProc, `jUWNUrK`); `(*BB6DDazDVN)` = DLL (FindProc, Release); `(*FfVzMmR)` = LazyProc (Addr, Call); `(*R3Cdh1AajU)` = Proc (Addr, Call, Find); `(*HK8M1WRH)` = Errno (Errno, Error); `(*B00rsmz36).Nanoseconds` = duración; 873 entradas totales, 34+ funciones init registrando todos los lazy procs de Windows |
 | `aOD4q1Y` | Protobuf registry/descriptor | Registro de tipos proto |
 | `Ve0nLKBMzmC` | `github.com/go-playground/validator/v10` | `(*adPnywIlKf75)`: Field, GetTag, ExtractType, Param, Parent, Top, ReportError, ReportValidationErrors, Validator |
 | `ncRaYk_Ke` | **`regexp` + `regexp/syntax`** (stdlib Go) | `MatchRune` = `regexp/syntax.Inst.MatchRune`; Funciones compiladoras: `MlPMSGX2GAB`, `Alav9s`, `T8Go8QdJaY`, `PJRLzfZ`, `IvOAAX`, `FS0IhhJL`, `MDfyjAe`, `RaR0kkqIl`. Usadas por `bszAWJqu` para compilar y ejecutar las 4 blacklists contra ventanas/procesos |
 | `bmV09O0` | Protobuf interno | Contexto de serialización protobuf; posiblemente `google.golang.org/protobuf/internal` |
 | `fcje4l4dl_uV` | Pipeline productor-consumidor de dUgTofmw | Método `Feed` — recibe datos de goroutines productoras para procesamiento centralizado |
-| `d8a0oX50i` | Paquete crypto del AC (generación de tokens) | Aparece con `math/big` en pclntab. Funciones: `ZhDr99uMy`, `QqEcxnsa`, `FLPyhrKfoTu`. Probable: generación de tokens de sesión o HMAC-SHA256 para autenticación |
+| `d8a0oX50i` | Utilidad crypto / encoding del AC | 9 entradas; funciones: `ZhDr99uMy`, `QqEcxnsa` (func1), `FLPyhrKfoTu`; genéricos: `QC1Nctw0QbWB[go.shape.string]`, `FJYZBfxOBhA[go.shape.int32]`, `KrxI5Eoc[go.shape.int]`; los genéricos con múltiples tipos sugieren una función de encoding que acepta int/string — posiblemente para serializar datos del HWID o generar tokens de sesión |
 | `Plcr2cx` | Paquete crypto adyacente a d8a0oX50i | Funciones: `CgWgrWQ`, `rHQg4df6V`, `hEQiyR8`. Posiblemente: manejo de claves públicas/privadas o derivación de claves |
 | `i7OyDUpCDA3q` | Helper de comparación/matching | Función `D5UnAj`; aparece entre funciones de `ncRaYk_Ke` sugiriendo helper de matching de strings o bytes |
 | `Pyp7aGakY` | Tipo `OrderedSet` (lista con deduplicación) | `(*DSNcSHSTN)`: Add, AddUnique, Contains, AddSlice, AsSlice, AddSlicer, Filter, Each, Length, Clear, Deduplicate, Join, Sort — implementación de conjunto ordenado usada para acumular resultados de detección |
@@ -94,6 +102,29 @@ La identificación se realizó por análisis de métodos, campos y comportamient
 | `Lvy2smJECjF` | **`math/rand`** | `(*J3sgRye).ExpFloat64`, `(*J3sgRye).Uint32` = generación de números pseudoaleatorios |
 | `J4pbxzDN6T` | Paquete helper pequeño | Funciones: `JxJlCi2H` (func1), `psK3gqUeJD` (func1, func2) — muy pequeño, probablemente wrapper o utility |
 | `i7OyDUpCDA3q` | Helper de comparación/matching | Función `D5UnAj`; aparece entre funciones de `ncRaYk_Ke` |
+
+---
+
+## Paquetes Visibles Solo en Type Table (Sin Entradas pclntab)
+
+Estos nombres de paquete aparecen en la tabla de tipos del runtime de Go
+(separados por `\x01\x08` length-prefixed), pero NO tienen entradas en pclntab.
+Posiblemente son packages cuyo código está completamente inlined por el compilador,
+o son packages definidos solo por tipos (sin funciones exportadas separadas).
+
+| Nombre en Type Table | Offset | Observación |
+|----------------------|--------|-------------|
+| `LDIRxH45` | 26239119 | Listado consecutivo a `dUgTofmw` y `bszAWJqu` |
+| `GqkPuR7I` | 26239129 | — |
+| `JSUhXt8Q` | 26239139 | — |
+| `DRAH6Q_N` | 26239149 | — |
+| `S3wyoPja` | 26239159 | — |
+| `HSQkFeBl` | 26239169 | — |
+| `S8NFupzZ` | 26239179 | Último de la secuencia |
+
+Estos 7 paquetes aparecen juntos inmediatamente después de `dUgTofmw` y `bszAWJqu`
+en la string table de tipos, sugiriendo que son paquetes del propio AC cuyos
+nombres fueron garbled pero cuyas funciones están inlined en los packages principales.
 
 ---
 
