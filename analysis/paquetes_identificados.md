@@ -102,6 +102,12 @@ La identificación se realizó por análisis de métodos, campos y comportamient
 | `Lvy2smJECjF` | **`math/rand`** | `(*J3sgRye).ExpFloat64`, `(*J3sgRye).Uint32` = generación de números pseudoaleatorios |
 | `J4pbxzDN6T` | Paquete helper pequeño | Funciones: `JxJlCi2H` (func1), `psK3gqUeJD` (func1, func2) — muy pequeño, probablemente wrapper o utility |
 | `i7OyDUpCDA3q` | Helper de comparación/matching | Función `D5UnAj`; aparece entre funciones de `ncRaYk_Ke` |
+| `lAEmxoi9bxt` | **`bytes` + `strings`** stdlib | `(*DJwHDX)` = `bytes.Buffer` (Cap, Grow, Len, Reset, String, Write, WriteByte, `q3aLUvCl`); `(*Ag5Lnmg_WHv)` = `bytes.Reader` (Read, ReadAt, ReadByte, ReadRune, Seek, Size, UnreadByte, WriteTo); `(*aBUwSdEWXG)` = `strings.Builder` (Write, WriteString); `(*AiEta36hdu)` = `strings.Replacer` (Replace, WriteString) |
+| `ux88b3Kaxj2` | **`io/fs`** — filesystem abstraction | `L_MN3FaO2` = `fs.FileMode` (String, IsDir, IsRegular, Perm, Type); `(*DayNID)` = `fs.PathError` (Error, Unwrap, Timeout); `HqQopxeAAae` = `fs.FileInfo`; `BMjI1OjH7G` = `fs.DirEntry` (slice type en ge3tkaLtE) |
+| `ge3tkaLtE` | **`path/filepath`** o `io/fs.WalkDir` | 209 entradas con genéricos sobre `fs.DirEntry` interface; `(*anzMQ02OY).Next` = iterador de directorio; `c6N7a8lO` = función de traversal; usado por el AC para escanear directorios del juego en búsqueda de VPKs modificados |
+| `BhCuafOD` | **Hash de 64 bits** (`hash/fnv` o `xxhash`) | `(*BDap2x).Write` + `(*BDap2x).Sum64` = hash.Hash64; usado para verificación de integridad de archivos del juego (comparar hash de VPK contra valor esperado del servidor) |
+| `xzFpaM3Mq3` | **`google.golang.org/grpc`** — cliente gRPC | 219 entradas; función principal `iwhm6fWm4v` (23 closures = bidirectional stream handler), `qd_m0I_QYkH7` (42 closures = conexión gRPC), `rKGI40jJGm` (42 closures = TLS handshake gRPC), `nL6NzEwvxPE` (27 closures = frame processor); referencias `DialContext`, `ClientStream`, `Invoke` confirman gRPC |
+| `keNa_4m` | Paquete de sesión/token del AC | `(*pvusDPtY5vCp)` con métodos `evojx0Jc`, `_GoIAD`, `h7OdHS4`; funciones: `AAs7V4vmMZA`, `TAZv8E`, `DPCCiaoS`, `IUJ55okf`, `uE66JFzHSqr`, `Lnr6NFAWAA` — posiblemente manejo de session tokens o key derivation |
 
 ---
 
