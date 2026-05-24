@@ -136,6 +136,7 @@ La identificación se realizó por análisis de métodos, campos y comportamient
 | `H61m4ib4MK` | **`golang.org/x/net/http/httpproxy`** — configuración de proxy HTTP | **23 funciones**. `EetmwuusE_W.ProxyFunc` — `ProxyFunc()` es el método EXCLUSIVO de `httpproxy.Config` en x/net (devuelve una función que determina el proxy para cada request). Múltiples tipos con método `.t3ZxKPIsvi` (nombre de interfaz garbled). Usado por el HTTP transport de gRPC para detectar y usar proxies del sistema en las conexiones al servidor |
 | `bCDs2NME30rs` | **`golang.org/x/text/unicode/norm`** — normalización Unicode NFC/NFD/NFKC/NFKD | **81 funciones**. `K6rIWyZnahNa` = `norm.Properties` — métodos preservados: BoundaryAfter, BoundaryBefore, Decomposition + 8 garbled (aB_krQPS, b_GsFQkgfkB, m4SGnt9TF, uNqLGw9En, vFLVaWZAb, xpsc3LISJ_C, zbPSwkC, zWaqaECsm). `ZRLRKCWnhV3` = `norm.Form` — métodos preservados: Bytes, IsNormalString, QuickSpan, String. Tipos internos: `aiCAsEN4qhLQ` (18 métodos = normWriter o reader interno), `evMxA_spS`, `ewL_xq`, `hBIwYYT` (3 métodos), `hfWGcVOBmSG` (9 métodos), `kaGy_uY3UW` (3 métodos), `rSJEk6Q7o2` (3 métodos), `Z_K2uJFs_z4` (2 métodos). 1 init closure, sin `decFunc`. Usado por `fm9Lu8y5M2` (x/text/transform) para normalización en pipelines de texto; probablemente también por `ki3UJTJ_` (x/net/idna) para normalizar nombres de dominio Unicode a punycode |
 | `fm9Lu8y5M2` | **`golang.org/x/text/transform`** — interfaz Transformer y pipeline de transformaciones de texto | **82 funciones**. `NjWooFOGaHB` = tipo con BoundaryAfter/BoundaryBefore/Decomposition embebidos (norm.Properties dentro de transform). `Z3QOzQs` = tipo con Bytes/IsNormalString/Properties/QuickSpan/String (norm.Form extendida con método Properties() = `transform.NormalizingTransformer`). Tipos Transformer: `k0OGSxr3P0A` y `t3m7x3OSoD` comparten set idéntico {f0R4x06NAF, sN_ByIOgY, zfaSMB} = {Transform, Reset, Span} de `transform.Transformer` — dos implementaciones distintas del mismo interfaz. `fbvyfXUwRs3` (14 métodos) = transformer complejo (Chain o NopCloser). `ezoeH8RzZQ` (10 métodos) = transformer con estado. `glT6E9` (1 método: sN_ByIOgY) = wrapper mínimo. `Bydvv0dhu0dC` (2 métodos), `kfNqppH` (2 métodos), `r0xu5k` (1 método). 1 init closure, sin `decFunc`. Depende de `bCDs2NME30rs` (unicode/norm) para normalización Unicode dentro de los transformers |
+| `hRyHlb` | **`golang.org/x/text/internal/number`** — formateo y redondeo de números Unicode | **197 funciones**. `eovpeu7y` = `number.Decimal` — métodos preservados exactos de la API: Assign, Round, RoundDown, RoundedInteger, RoundUp, Shift. 52 init closures (tablas de formateo numérico localizado). `decFunc` PRESENTE (string literals cifrados). Posición en pclntab: adyacente a `PkUgQB64wN09` (filippo.io/nistec). Dependencia interna de `WpWmMn` (`golang.org/x/text/language`) para formateo de números con redondeo Unicode-aware |
 
 ---
 
@@ -153,7 +154,8 @@ registradas antes de que el AC conecte al servidor.
 | `WGfDxX0zz2M` | **117** | Paquete de firmas 3. 117 `init.funcX` (rango func1-func117) con sub-closures = 117 firmas. Un receiver `(*lg7_RxsCD).dNWdv6axQb26` = struct de datos de firma. 396 entradas pclntab totales |
 | `YCJ5PUz_M` | **116** | Paquete de firmas 4. 116 `init.funcX` (rango func1-func116) con sub-closures = 116 firmas. Un receiver `(*d7eXzVsSSu).dHFZRa17` = struct de datos de firma. 395 entradas pclntab totales |
 | `kNpc1A53` | **84** | Paquete de firmas 5. 84 `init.funcX` secuenciales (func1-func84, SIN gaps = sin sub-closures). Adyacente a `Moh1QXpPW` (Wails Events) en pclntab. 104 entradas totales |
-| **TOTAL CONFIRMADO** | **778** | `ra_94HIlnc6`(299) + `EyjsrRr`(162) + `WGfDxX0zz2M`(117) + `YCJ5PUz_M`(116) + `kNpc1A53`(84) = 778 firmas de cheat registradas estáticamente |
+| **TOTAL CONFIRMADO** | **778** | `ra_94HIlnc6`(299) + `EyjsrRr`(162) + `WGfDxX0zz2M`(117) + `YCJ5PUz_M`(116) + `kNpc1A53`(84) = 778 firmas de cheat en los 5 paquetes principales |
+| **TOTAL CON ADICIONALES** | **~825** | + `BdDIRo5Tv42`(~10) + `msvCchDB`(~19) + `er9_yp`(~18) = ~825 firmas registradas en init() antes de conectar al servidor |
 
 Paquetes relacionados (pequeños, init closures con strings garble-literals):
 - `er9_yp` (57 funcs): **18 init closures + `decFunc` + `init.0` (pre-init)** → paquete AC custom con strings cifrados. Función `h0INzvC179I` (4 closures), `nQt7jN_pa` (3 closures), `YadKWKe` (1 closure), `ii5oZ3o5kV` (deferwrap1), `qtF5zU_s` (deferwrap1). Vecinos en pclntab: ANTES `vfFlma.decFunc` + `qavYW93.CoXO8f`; DESPUÉS `G2Ab89kPnVq`, luego `CNEPNkZW_`. Las 18 init closures probablemente registran 18 patrones de detección cifrados adicionales (posible blacklist de window titles cifrada)
@@ -284,14 +286,13 @@ librerías de terceros menos conocidas.
 
 ### Potencialmente Identificados (requieren confirmación)
 
-| Paquete | Funciones | Identificación Probable | Evidencia |
-|---------|-----------|------------------------|-----------|
-| `PkUgQB64wN09` | 54 | **`filippo.io/nistec`** o `x/crypto/internal/nistec` | `AgFtY5`: Add, Double, IsOnCurve, Params, ECDH, Equal — API exacta de curva ECDH NIST |
-| `hRyHlb` | 186 | **`golang.org/x/text/internal/number`** | `eovpeu7y`: Assign, Round, RoundDown, RoundedInteger — formatting de números con redondeo |
-| `anGbYY2EWPw` | 305 | **Protobuf sub-paquete** (filedesc o proto/protoapi) | `HEGKR0lOPr3.Parent` = descriptor.Parent() — protoreflect interface method |
-| `g7rfSp_eNaON` | 60 | **Buffer wrapper custom** | `ITLFV1h`: Available, AvailableBuffer, Bytes, Cap = métodos de bytes.Buffer; `ZzwM9pnBD_j` = función auxiliar |
-| `saxLnjfOw` | 158 | **`github.com/json-iterator/go`** probable — encoder JSON de alto rendimiento | `VfCOmhAX5v.Encode` + `VfCOmhAX5v.EncodeValue` (únicos en json-iterator), múltiples tipos encoder (a7Xb4Ta, gTAEP2cR, n_83R1, oG_m2mVyC, WNyliq1kjKj) = ptrEncoder/structEncoder/mapEncoder/sliceEncoder/arrayEncoder. `d3No1nSZ94wm.Bytes/Len/Reset/Write/WriteString` = `jsoniter.Stream` (wrapper de bytes.Buffer). `eiQLC3Onif.Bytes/Drop/Len/ReadByte` = `jsoniter.Iterator`. `map.init.2/3` = type encoder cache. Llamado 19 veces por `Ve0nLKBMzmC` (validator), 8 veces por `cXI2MODy` (gin/binding). Gin usa json-iterator por defecto para serialización JSON |
-| `I2I3kG0xgKU` | 34 | **`golang.org/x/net/http2/hpack`** sub-package o util HTTP/2 | 18 init closures de solo 34 funciones (53% ratio = alto). Llamado 27 veces por `i1aqCskEISkX` (x/net/http2) y 24 veces por `ki3UJTJ_` (x/net/idna). Adyacente a `ki3UJTJ_` en pclntab. El alto ratio closures/funciones podría ser tablas Huffman (HPACK usa tablas de 256+ entradas, pero como array no closures) |
+| Paquete | Funciones | Identificación | Evidencia |
+|---------|-----------|----------------|-----------|
+| `PkUgQB64wN09` | **71** | **CONFIRMADO: `filippo.io/nistec`** — implementación de curvas NIST en tiempo constante | Dos tipos de curva: `AgFtY5` y `D_cBbyrdL7N` — métodos preservados idénticos a la API de nistec: Add, Double, ECDH, Equal, IsOnCurve, Params, Public, ScalarBaseMult, ScalarMult, Sign. `ECDH` y `Sign` son métodos exclusivos de `filippo.io/nistec` (no existen en `crypto/elliptic`). Posición: entre `G1kVlqH3` (cryptobyte) y `t89_Iw9sGL1` (edwards25519) en pclntab — cluster cryptográfico de filippo.io. Usado por `OibOJGGM67` (ecdh stdlib) como backend en tiempo constante |
+| `anGbYY2EWPw` | **314** | **Probable `google.golang.org/protobuf/internal/filedesc`** u otro sub-paquete protobuf grande | **249+ init closures** = carga masiva de descriptores proto en init(). `HEGKR0lOPr3` con métodos preservados `Parent` y `String` = `protoreflect.Descriptor` interface (`Parent()` devuelve el descriptor padre). Posición: DESPUÉS de `YCJ5PUz_M` (firmas de detección 4), ANTES de `vypSO2` (Wails assetserver). La combinación de 249+ closures de init + Parent/String = carga de descriptores protobuf de todos los archivos `.proto` del AC |
+| `g7rfSp_eNaON` | **112** | **CONFIRMADO: wrapper custom de `bytes.Buffer` + `bytes.Reader`** | `ITLFV1h` = `bytes.Buffer` — API completa preservada: Available, AvailableBuffer, Bytes, Cap, Grow, Len, Next, Read, ReadByte, ReadBytes, ReadFrom, ReadRune, ReadString, Reset, String, Truncate, UnreadByte, UnreadRune, Write, WriteByte, WriteRune, WriteTo, WriteString. `WfaC7enF` = `bytes.Reader` — métodos: Len, Read, ReadAt, ReadByte, ReadRune, Reset, Seek, Size, UnreadByte, UnreadRune, WriteTo. `decFunc` PRESENTE (strings cifrados). NOTA: `sLqxHdT` aparece ANTES en pclntab (también tiene `aFoLnPeIZXz` = bytes.Buffer) — probable dependencia o paquete companion |
+| `saxLnjfOw` | **244** | **CONFIRMADO: `github.com/json-iterator/go`** — encoder JSON de alto rendimiento | `VfCOmhAX5v.Encode` + `VfCOmhAX5v.EncodeValue` = API exclusiva de json-iterator (no existe en encoding/json). `d3No1nSZ94wm` = `jsoniter.Stream` (Bytes, Len, Reset, Write, WriteString). `eiQLC3Onif` = `jsoniter.Iterator` (Bytes, Drop, Len, ReadByte). Múltiples encoders: a7Xb4Ta, gTAEP2cR, n_83R1, oG_m2mVyC, WNyliq1kjKj = ptrEncoder/structEncoder/mapEncoder/sliceEncoder/arrayEncoder. `init.0/1/2` = tres fases de init (encoder cache, type registry, fallback). Llamado por `Ve0nLKBMzmC` (validator) y `cXI2MODy` (gin/binding). Gin usa json-iterator por defecto |
+| `I2I3kG0xgKU` | 34 | **Utility HTTP/2** (posiblemente `golang.org/x/net/http2` sub-paquete interno) | 18 init closures de 34 funciones (53% ratio = muy alto, sugiere tablas de constantes). Posición CONFIRMADA: entre `ki3UJTJ_` (x/net/idna) y `i1aqCskEISkX` (net/http + http2) en pclntab. Llamado 27 veces por `i1aqCskEISkX` y 24 veces por `ki3UJTJ_`. Las 18 init closures probablemente registran constantes de protocolo HTTP/2 o tablas de strings de headers |
 
 ### Nombres Alternativos en Type Table (mismos paquetes, nombres garbled distintos)
 
@@ -324,8 +325,12 @@ Probablemente son paquetes AC custom muy pequeños o micro-wrappers del protocol
 | Paquete | Funciones | Observación |
 |---------|-----------|-------------|
 | `GtN_WZiIQ` | 14 | Error types: `dpN7za.Error/Unwrap`, `EKV_aagFA.Error` |
-| `msvCchDB` | 23 | 10 init closures con sub-closures |
-| `h7lxVr` | 27 | Métodos garbled, custom package |
+| `msvCchDB` | 23 | **Probable 7mo paquete de firmas de detección** — **19 init closures** con sub-closures (func1-func19 + sub-closures como func10.1, etc.). Sin `decFunc`, sin tipos propios, sin funciones no-init. Posición EXACTA: DESPUÉS de `w0bqp0RaeD` (detección activa), ANTES de `GztdjdTxnX1w`. Patrón idéntico a `BdDIRo5Tv42` y `kNpc1A53` |
+| `GztdjdTxnX1w` | desconocido | Aparece DESPUÉS de `msvCchDB` en pclntab. Posición entre módulos de detección. No analizado en profundidad |
+| `h7lxVr` | 27 | Métodos garbled, custom package. `buwDgX7Zkn.GetOriginFromURL` aparece ANTES en pclntab — `buwDgX7Zkn` es un helper de URL parsing |
+| `sLqxHdT` | desconocido | Aparece ANTES de `g7rfSp_eNaON` en pclntab. Tiene `aFoLnPeIZXz` = `bytes.Buffer`. Probable companion o dependencia del wrapper de bytes |
+| `buwDgX7Zkn` | desconocido | Función preservada `GetOriginFromURL` visible en binario. Aparece antes de `h7lxVr`. Helper de parsing de URLs (extrae origen de una URL) |
+| `Q2v0Ja734` | desconocido | Tiene función `Sum64` — posible paquete hash adicional (fnv64? murmur? otro xxhash?) |
 | `BdDIRo5Tv42` | 12 | **Probable 6to paquete de firmas de detección** — init.func1-func10 + init.func10.1 (sub-closure) = ~10 firmas adicionales de cheat. Mismo patrón que `kNpc1A53` (84 firmas) pero más pequeño. Sin decFunc |
 | `Ga7B40suNkY` | 8 | 4 init closures |
 | `BSjj4d` | 5 | 4 init closures |
@@ -344,13 +349,13 @@ Probablemente son paquetes AC custom muy pequeños o micro-wrappers del protocol
 | Categoría | Paquetes |
 |-----------|---------|
 | Paquetes del AC (código propio) | ~15 |
-| Firmas de detección estáticas | 5 (778 firmas total) |
+| Firmas de detección estáticas | 7 (~825 firmas total con msvCchDB + BdDIRo5Tv42) |
 | Stdlib garbled | ~50 |
 | Stdlib sin garble (runtime) | 5 |
-| Terceros identificados | ~45 |
+| Terceros identificados | ~47 (+ hRyHlb, PkUgQB64wN09, saxLnjfOw, g7rfSp_eNaON confirmados) |
 | Wails/UI packages | ~15 |
-| Pendientes/no identificados | ~28 |
-| **TOTAL** | **183** |
+| Pendientes/no identificados | ~24 |
+| **TOTAL** | **183+** |
 
 ---
 
