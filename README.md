@@ -134,7 +134,7 @@ proto/
 - **CheatSigs dinámicos** — patrones de bytes descargados del servidor en cada sesión
 - **778 firmas de cheat hardcoded** en 5 paquetes de firmas estáticas: `ra_94HIlnc6`(299) + `EyjsrRr`(162) + `WGfDxX0zz2M`(117) + `YCJ5PUz_M`(116) + `kNpc1A53`(84). Supera en firmas estáticas a EAC y VAC
 - **`hlavBkMcO` — motor de detección principal** con **644 sub-closures** en el paquete `pdFrspK_G`. Cada closure = una verificación activa de estado del juego. Distinto de las firmas estáticas: estas se EJECUTAN directamente, no se registran en tablas
-- **Blacklist de 35+ herramientas RE** incluyendo: Ghidra, x32dbg, WinDbg, IDA Pro, de4dot, dnSpy, Fiddler, aimware, y otros
+- **Blacklist de ~62 entradas en 4 listas distintas** — BL1 (16 títulos de ventana, 6 chars fijos): x32dbg, windbg, ghidra, de4dot, dbgclr, hacker, sysmon, efence... | BL2 (~30 procesos/substrings): aimware, fiddler, ollydbg, x64_dbg, PhantOm, wpe pro, harmony, cef.pak, Discord-, Operacmd.exe, Arc.exe... | BL3 (6 herramientas RE cortas): dump, peek, kgdb, mdbg | BL4 (10 herramientas .NET + cheats): dnspy, ilspy, pizza (cheat L4D2), ida -, crack
 - **Endpoint gRPC `/auth`** confirmado — encontrado en string table inmediatamente después de la blacklist
 - **Búsqueda de VPKs** con patrón glob `k1e1y*.vpk` para cheats conocidos de L4D2
 - **Screenshot automático** cada ~120s como evidencia de ban (PNG NRGBA)

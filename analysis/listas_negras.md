@@ -1,133 +1,177 @@
 # Listas Negras — Procesos, Ventanas y Herramientas RE
 
-El AC mantiene cuatro blacklists separadas para detectar herramientas de análisis, debugging
-y cheating. Tres de las cuatro son strings cortas que strings.exe (min-length 4+) no captura —
-fueron encontradas mediante búsqueda cruda del binario en PowerShell.
+El AC mantiene múltiples blacklists para detectar herramientas de análisis, debugging
+y cheating. Fueron extraídas mediante análisis crudo del binario en PowerShell
+(ISO-8859-1, sin ejecución del binario).
+
+**Nota técnica sobre el almacenamiento:** Todas las strings de blacklist están almacenadas
+como substrings contiguas en el bloque `.rodata` del binario Go. No hay bytes nulos entre
+entradas — los límites exactos entre strings adyacentes están definidos por los descriptores
+`{ptr, len}` del slice de Go en otra región de memoria. Esto significa que la separación
+entre algunas entradas es inferida, no confirmada al 100%.
+
+---
+
+## Bloque Cleartext Principal (offsets 29507905–29529100)
+
+Extraído del dump crudo de bytes. Bloque completo confirmado (ISO-8859-1):
+
+```
+cef.pakaimware%w : %wgdb.exereverseprocesssharpodfiddlerx64_dbgpetoolsmonitor
+ollydbgwpe proPhantOmx32_dbgphantomWPE PROcharlescheckerharmonyPEToolssniffer
+MDBCrewDIEmWinMonitorDiscord- Operacmd.exefdm.exezen.exeArc.exe
+```
+
+El separador `%w : %w` es un format string de error de Go que quedó intercalado entre
+las dos mitades de la blacklist por el layout del compilador — NO es parte de ninguna entrada.
 
 ---
 
 ## Blacklist 1 — Títulos de Ventana (EnumWindows + GetWindowTextW)
 
-String combinada confirmada por hex dump (offset 0x01C24134):
+String confirmada por análisis del pclntab (offset 0x01C24134):
 
 ```
-%s%s%scommonaddonsx32dbgpc-retCentoswindbgdbgclrde4dotpepperghidrahackerx96dbgfoldersysmontimersefenceselectscalar
+x32dbgpc-retCentoswindbgdbgclrde4dotpepperghidrahackerx96dbgfoldersysmontimersefenceselectscalar
 ```
 
-**Nota importante:** `%s%s%s` y `commonaddons` son strings de construcción de path del directorio
-de addons — NO son tokens de la blacklist. La blacklist de ventanas empieza en `x32dbg`.
+**Prefijos que NO son blacklist:** `german`, `french`, `%s%s%s`, `common`, `addons`
+— son strings de construcción de path del directorio de addons, almacenadas adyacentes.
 
-Tokens de la blacklist de ventanas (16 entries, todos de 6 caracteres exactos):
+Tokens de la blacklist de ventanas — **16 entradas, todas de exactamente 6 caracteres**:
 
 | Token | Herramienta / Descripción |
 |-------|--------------------------|
 | `x32dbg` | x32dbg — debugger para procesos 32-bit |
-| `pc-ret` | PC Ret — herramienta de análisis de PC |
-| `Centos` | CentOS — posible detección de VM Linux/WSL |
-| `windbg` | WinDbg — debugger de Microsoft |
-| `dbgclr` | DbgCLR — debugger de runtime .NET (Visual Studio) |
+| `pc-ret` | PC-Ret — herramienta de análisis de proceso / cheat no identificado |
+| `Centos` | CentOS — posible detección de entorno VM/WSL Linux |
+| `windbg` | WinDbg — debugger de kernel de Microsoft |
+| `dbgclr` | DbgCLR — debugger de runtime .NET (Visual Studio CLR Debugger) |
 | `de4dot` | de4dot — deobfuscador de assemblies .NET |
-| `pepper` | Pepper Flash / componente Chromium |
+| `pepper` | PepperFlash / componente CEF / posible cheat |
 | `ghidra` | Ghidra — framework de RE de la NSA |
-| `hacker` | Ventanas con "hacker" en el título |
-| `x96dbg` | Variante de x64dbg |
-| `folder` | Posiblemente Windows Explorer con carpeta sospechosa abierta |
-| `sysmon` | Sysinternals SysMon |
-| `timers` | Herramientas de timers/profiling |
-| `efence` | Electric Fence — memory debugger (Linux) |
-| `select` | Herramienta con "select" en el título |
-| `scalar` | Herramienta con "scalar" en el título |
+| `hacker` | Substring — captura Process Hacker, "hacker" en nombre de ventana |
+| `x96dbg` | Variante de x64dbg (x96dbg = versión alternativa) |
+| `folder` | Substring — posiblemente Windows Explorer con carpeta sospechosa |
+| `sysmon` | Sysinternals SysMon — monitor de eventos de sistema |
+| `timers` | Timer Resolution / herramientas de timing (usadas por cheaters) |
+| `efence` | Electric Fence — memory debugger (Linux port) |
+| `select` | Herramienta con "select" en el título (propósito incierto) |
+| `scalar` | Herramienta con "scalar" en el título (propósito incierto) |
 
 El AC usa `EnumWindows` + `GetWindowTextW` para iterar todas las ventanas del sistema
 y compara el título contra estos tokens. Método de matching: REGEX (paquete `ncRaYk_Ke` = `regexp`),
-probablemente patrón combinado `(?i)(x32dbg|pc-ret|Centos|windbg|...)` para matching eficiente.
+probablemente patrón combinado `(?i)(x32dbg|pc-ret|Centos|windbg|...)`.
 
 ---
 
-## Blacklist 2 — Nombres de Procesos del Sistema
+## Blacklist 2 — Nombres de Procesos y Substrings
 
-Strings encontradas en el binario para comparar contra la lista de procesos:
+Extraída del bloque cleartext (offsets ~29507905–29529100). Las entradas están almacenadas
+contiguas sin separadores; los límites entre entradas adyacentes se infieren por longitud
+y contexto.
 
-```
-gdb.exe         reverse         process         sharpod
-fiddler         x64_dbg         petools         monitor
-ollydbg         wpe pro         PhantOm         x32_dbg
-phantom         WPE PRO         charles         checker
-harmony         PETools         sniffer         MDBCrew
-DIEmW           WinMonitor      Discord         - Opera
-cmd.exe         fdm.exe         zen.exe         Arc.exe
-aimware         cef.pak
-```
+### Bloque A — Cheats y herramientas conocidas
 
-Nota: `cef.pak` es el Chromium Embedded Framework. La presencia de `cef.pak` + `aimware` juntos
-sugiere que detecta específicamente el cheat Aimware (que usa CEF para su interfaz gráfica).
-El substring `process` captura Process Monitor, Process Explorer, Process Hacker, etc.
+| Entry | Long. | Tipo | Descripción |
+|-------|-------|------|-------------|
+| `cef.pak` | 7 | archivo | Chromium Embedded Framework — detecta Aimware específicamente (usa CEF para su GUI) |
+| `aimware` | 7 | substring | Cheat aimware.net (CS:GO / TF2) |
+| `wpe pro` | 7 | substring | WPE Pro — Winsock Packet Editor (captura de paquetes, con espacio) |
+| `WPE PRO` | 7 | substring | WPE Pro en mayúsculas (case-variant para regex) |
+| `PhantOm` | 7 | substring | Cheat PhantOm (capitalización exacta preservada) |
+| `phantom` | 7 | substring | Cheat phantom (variante lowercase) |
+| `harmony` | 7 | substring | Cheat harmony |
+| `MDBCrew` | 7 | substring | Grupo de cheats MDBCrew |
+| `checker` | 7 | substring | Genérico — "checker" en nombre de proceso/ventana |
 
-### Categorías
+### Bloque B — Debuggers y proxies
 
-**Debuggers:**
-- `gdb.exe` — GNU Debugger
-- `ollydbg` — OllyDbg (debugger clásico de RE)
-- `x64_dbg` / `x32_dbg` — x64dbg y x32dbg
+| Entry | Long. | Tipo | Descripción |
+|-------|-------|------|-------------|
+| `gdb.exe` | 7 | proceso | GNU Debugger |
+| `x64_dbg` | 7 | substring | x64dbg — debugger 64-bit |
+| `x32_dbg` | 7 | substring | x32dbg — debugger 32-bit (con guión bajo, distinto del token `x32dbg` de B1) |
+| `ollydbg` | 7 | substring | OllyDbg — debugger clásico de RE |
+| `fiddler` | 7 | substring | Fiddler — HTTP/S proxy |
+| `charles` | 7 | substring | Charles — HTTP proxy |
+| `sniffer` | 7 | substring | Genérico — sniffers de red |
 
-**Proxies y captura de red:**
-- `fiddler` — Fiddler HTTP proxy
-- `wpe pro` / `WPE PRO` — Winsock Packet Editor (captura de paquetes)
-- `charles` — Charles proxy
+### Bloque C — Herramientas PE y análisis
 
-**Herramientas PE / RE:**
-- `petools` / `PETools` — PE Tools
-- `processharp` — ProcessSharp
-- `DIEmW` — Detect-It-Easy (detección de packers/protectors)
-- `reverse` — genérico para herramientas de reversing
+| Entry | Long. | Tipo | Descripción |
+|-------|-------|------|-------------|
+| `petools` | 7 | substring | PE Tools (lowercase) |
+| `PETools` | 7 | substring | PE Tools (capitalización exacta) |
+| `monitor` | 7 | substring | Genérico — Process Monitor, System Monitor, etc. |
+| `reverse` | 7 | substring | Genérico — procesos/ventanas con "reverse" |
+| `process` | 7 | substring | Genérico — Process Explorer, Process Hacker, etc. |
+| `sharp` | 5 | substring | Substring — dnSpy (SharpSpy), SharpPcap, dotnet-trace |
 
-**Monitores del sistema:**
-- `monitor` / `inMonitor` — herramientas de monitoreo de procesos
-- `checker` — genérico
-- `sniffer` — sniffers de red
+### Bloque D — Substrings ambiguos (límites inferidos)
 
-**Browsers y apps con overlay:**
-- `Discord` — bloqueado por el overlay de Discord Game SDK
-- `Opera` — bloqueado por riesgo de overlay
-- `Arc.exe` — Arc Browser con overlay
-- `zen.exe` — Zen Browser
+Zona de 14 bytes continuos `DIEmWinMonitor` — **dos interpretaciones posibles**:
 
-**Herramientas del sistema:**
-- `cmd.exe` — Command Prompt (bloqueado mientras el AC está activo)
-- `fdm.exe` — Free Download Manager
-- `od` — octal dump (herramienta Unix)
+| Interpretación A | Interpretación B |
+|-----------------|-----------------|
+| `DIEmW` (5) + `WinMonitor` (10) — dos entradas independientes | `DIEmWinMonitor` (14) — una sola entrada substring |
+| `DIEmW` = variante del cheat DIE / "Detect It Easy" modificado | Matches cualquier proceso/ventana con "DIEmWinMonitor" exacto |
+| `WinMonitor` = herramienta de monitoreo de Windows | Menos probable (nombre demasiado específico para ser substring) |
+
+**Probabilidad:** Interpretación A es más consistente con el patrón del resto de la blacklist
+(entradas cortas de 5-10 chars). La W inicial de "WinMonitor" se une visualmente a "DIEmW" por
+el layout contiguo de Go.
+
+Entrada `od` (2 bytes): presente en el blob contiguo entre `sharp` y `fiddler`
+(`sharpodfiddler`). Podría ser: OllyDbg abreviado, `od` unix tool, o ruido de layout.
+Con solo 2 chars, matching por substring generaría demasiados falsos positivos — **su
+función exacta como entry standalone es incierta**.
+
+### Bloque E — Procesos de browsers y apps con overlay
+
+| Entry | Descripción |
+|-------|-------------|
+| `Discord-` | Discord — título de ventana "Discord - [canal]" (el guión es parte del patrón) |
+| `Operacmd.exe` | Opera Browser — proceso específico del command-line de Opera |
+| `fdm.exe` | Free Download Manager |
+| `zen.exe` | Zen Browser |
+| `Arc.exe` | Arc Browser (overlay integrado) |
+
+**Nota sobre Discord-:** El byte siguiente al guión es `0x20` (espacio), lo que sugiere que
+la entry completa podría ser `"Discord- "` (8 chars con espacio final). Discord usa el formato
+de título `"Discord - #canal"`, por lo que el patrón `"Discord-"` con o sin espacio captura
+ese formato.
+
+**Nota sobre Opera:** La entry es `Operacmd.exe` — el ejecutable del componente command-line
+de Opera. No es la aplicación principal `opera.exe` ni detección genérica de "Opera".
 
 ---
 
-## Blacklist 3 — Herramientas RE (strings cortas, raw binary)
+## Blacklist 3 — Herramientas RE Cortas (strings raw, zona VPK)
 
-Encontrada mediante búsqueda cruda del binario. String concatenada:
+Encontrada en la región de datos adyacente al glob pattern de VPK.
+String concatenada confirmada en el binario:
 
 ```
 .vpkdumppeekkgdbmdbgxdeb
 ```
 
-Contexto en el binario: `eEpPPOST.vpkdumppeekkgdbmdbgxdeb%s%sallgall`
-
-Tokens desglosados:
+Contexto completo: `eEpPPOST.vpkdumppeekkgdbmdbgxdeb%s%sallgall`
 
 | Token | Herramienta |
 |-------|-------------|
-| `.vpk` | Extensión VPK — también glob pattern `*.vpk` para archivos |
-| `dump` | Herramientas de memory dump (ProcDump, etc.) |
-| `peek` | Herramientas de memory peek |
+| `.vpk` | Extensión VPK — glob `*.vpk` para archivos de addons |
+| `dump` | Herramientas de memory dump (ProcDump, WinPMem, etc.) |
+| `peek` | Memory peek tools |
 | `kgdb` | Kernel GDB — debugger a nivel de kernel |
-| `mdbg` | Microsoft Debugger (mdbg.exe) |
-| `xdeb` | xdeb — X Window debugger |
-
-Nota: esta blacklist aparece junto con el string HTTP `POST` y formatos `%s%s`, sugiriendo
-que está en la misma región de datos que las strings de formato de requests.
+| `mdbg` | mdbg.exe — Microsoft Debugger para .NET |
+| `xdeb` | xdeb — debugger X Window (menos probable en contexto Windows) |
 
 ---
 
-## Blacklist 4 — Herramientas .NET y RE (strings cortas, raw binary)
+## Blacklist 4 — Herramientas .NET y Cheats L4D2 (zona k1e1y*.vpk)
 
-Encontrada justo después del glob pattern `*.vpk`. String concatenada:
+Encontrada inmediatamente después del glob `k1e1y*.vpk`. String concatenada:
 
 ```
 startdnspyilspyILSpypizzacrackida -brutejamesDebug
@@ -138,50 +182,47 @@ Contexto en el binario:
 k1e1y*.vpkstartdnspyilspyILSpypizzacrackida -brutejamesDebug/auth
 ```
 
-Tokens confirmados por hex dump (offset 0x01C1E1E8):
+Tokens confirmados (offset 0x01C1E1E8) — **todos de exactamente 5 caracteres**:
 
 | Token | Longitud | Herramienta / Descripción |
 |-------|----------|--------------------------|
-| `start` | 5 | Procesos/ventanas con "start" en el nombre (propósito incierto) |
-| `dnspy` | 5 | dnSpy — decompilador y debugger de .NET / C# |
-| `ilspy` | 5 | ILSpy — decompilador de .NET / C# |
-| `ILSpy` | 5 | ILSpy (variante case-sensitive para regex) |
-| `pizza` | 5 | Pizza — cheat conocido para Left 4 Dead 2 |
+| `start` | 5 | Procesos con "start" — propósito incierto |
+| `dnspy` | 5 | dnSpy — decompilador y debugger de .NET/C# |
+| `ilspy` | 5 | ILSpy — decompilador .NET/C# (lowercase) |
+| `ILSpy` | 5 | ILSpy — decompilador .NET/C# (capitalización exacta) |
+| `pizza` | 5 | **Cheat pizza para Left 4 Dead 2** (detección específica L4D2) |
 | `crack` | 5 | Genérico — ventanas/procesos con "crack" |
-| `ida -` | 5 | **IDA Pro** — patrón de título de ventana "IDA - [filename]" |
+| `ida -` | 5 | **IDA Pro** — patrón de título de ventana `"IDA - [archivo]"` |
 | `brute` | 5 | Herramientas de fuerza bruta |
-| `james` | 5 | James (herramienta o cheat) |
-| `Debug` | 5 | Genérico — ventanas/procesos con "Debug" |
+| `james` | 5 | James — herramienta o cheat (no identificado con certeza) |
+| `Debug` | 5 | Genérico — ventanas/procesos con "Debug" en el nombre |
 
-**CORRECCIÓN CRÍTICA:** El token es `ida -` (5 bytes: `69 64 61 20 2D`) — no `ida` (3 bytes).
-El espacio y guión son parte del patrón, diseñado para capturar el título de IDA Pro
-(`IDA - nombre_archivo.exe`). Renombrar el ejecutable NO evita la detección si la ventana
-tiene este título; hay que cambiar también el título de la ventana de IDA.
-
-`pizza` es un cheat conocido para Left 4 Dead 2.
-`start` — propósito exacto no confirmado, posiblemente detecta el comando `start.exe` de Windows
-o algún launcher con ese nombre.
+**CORRECCIÓN CRÍTICA sobre `ida -`:** El token es `ida -` (5 bytes: `69 64 61 20 2D`) — incluye
+espacio y guión. Está diseñado para capturar el título de ventana de IDA Pro (`"IDA - archivo.idb"`).
+Renombrar `ida64.exe` o `ida.exe` NO evita la detección — el título de la ventana también debe
+evitar el patrón `"ida -"`.
 
 ---
 
 ## Glob Pattern de Archivos VPK
 
 ```
-*.vpk
+*.vpk        — todos los archivos VPK en el directorio de addons
+k1e1y*.vpk   — patrón específico para cheats L4D2 conocidos
+%s\%sk1e1y*.vpk — formato completo con path base y subdirectorio
 ```
 
-Encontrado directamente en el binario en la región de datos. El AC enumera todos los archivos
-`.vpk` en el directorio de addons del juego y los reporta al servidor vía el mensaje `BiK8wj`
-(campos Path y Size).
+El AC enumera todos los archivos `.vpk` del directorio de addons del juego y reporta
+al servidor vía mensaje protobuf (campos `Path` y `Size`). El patrón `k1e1y` es un
+identificador hardcoded de cheats VPK conocidos para L4D2.
 
 ---
 
-## Módulo WatchList — _6di6zc0se2v
+## Módulo WatchList — `_6di6zc0se2v`
 
 El paquete `_6di6zc0se2v` implementa el mecanismo de vigilancia continua:
 
 ```go
-// Funciones identificadas:
 _6di6zc0se2v.(*_o3YyW).WatchList    // función principal de la lista de vigilancia
 _6di6zc0se2v.(*_o3YyW).Add          // agregar item a la lista de vigilancia
 _6di6zc0se2v.(*_o3YyW).AddWith      // agregar item con condición
@@ -191,43 +232,76 @@ _6di6zc0se2v.(*Rs0QF1nUdhgw).Has    // verificar si un item está en la lista
 _6di6zc0se2v.(*UWzc59).Has          // verificar (tipo alternativo)
 ```
 
-5 funciones `init.func` (func1-func5) — posiblemente inicialización de 5 categorías distintas
-de items vigilados (ventanas, procesos, módulos, etc.).
+5 funciones `init.func` (func1-func5) — inicialización de 5 categorías distintas de
+items vigilados (ventanas, procesos, módulos, archivos VPK, otro).
 
 ---
 
-## Técnica Anti-Análisis Adicional: MustFindProcByOrdinal
+## Técnica Anti-Análisis: MustFindProcByOrdinal
 
-El binario usa `MustFindProcByOrdinal` para cargar algunas APIs de Windows por número de
-ordinal en lugar de nombre. Esto impide identificar qué APIs se llaman simplemente buscando
-sus nombres como strings en el binario.
+El binario carga algunas APIs de Windows por número de ordinal en lugar de nombre.
+Esto impide identificar las APIs simplemente buscando sus nombres como strings.
 
-APIs cargadas por nombre (aún visibles): `VirtualQuery`, `BitBlt`, `PatBlt`, `GetDC`, `GetSystemInfo`
-APIs cargadas por ordinal (sin strings visibles): `ReadProcessMemory`, `OpenProcess`,
-`CreateToolhelp32Snapshot`, `EnumWindows`, `GetWindowTextW`, etc.
+APIs cargadas por **nombre** (visibles en binario): `VirtualQuery`, `BitBlt`, `PatBlt`,
+`GetDC`, `GetSystemInfo`
+
+APIs cargadas por **ordinal** (sin strings visibles): `ReadProcessMemory`, `OpenProcess`,
+`CreateToolhelp32Snapshot`, `EnumWindows`, `GetWindowTextW`, y otras.
+
+---
+
+## Resumen: Total de Entradas por Blacklist
+
+| Blacklist | Método de detección | Entradas conocidas |
+|-----------|--------------------|--------------------|
+| BL1 — Títulos de ventana | EnumWindows + GetWindowTextW + regex | 16 |
+| BL2 — Procesos/substrings | CreateToolhelp32Snapshot + substring match | ~30 |
+| BL3 — Herramientas RE cortas | Substring match (zona VPK) | 6 |
+| BL4 — .NET + cheats L4D2 | Substring match (zona k1e1y) | 10 |
+| **Total** | | **~62 entradas** |
 
 ---
 
 ## Bypass de las Blacklists
 
-### Para títulos de ventana (Blacklists 1, 4)
-El chequeo es por substring REGEX en el título. Renombrar la ventana o usar la opción
-de configuración del título en el debugger resuelve el problema:
-- `x32dbg`: Options → Preferences → GUI → cambiar título de ventana
-- `ghidra`: renombrar en el launcher o modificar via agente Java
-- `IDA Pro`: **El patrón es `ida -` (con espacio-guión).** Renombrar `ida64.exe` no basta —
-  el TÍTULO de la ventana debe evitar el patrón `ida -`. Usar IDA en modo batch o cambiar
-  el título programáticamente (script IDA: `idc.set_inf_attr(idc.INF_APPTYPE, ...)` o renombrar
-  el archivo abierto)
+### Para títulos de ventana (BL1, BL4)
 
-### Para procesos (Blacklistas 2, 3, 4)
-El nombre del ejecutable es lo que se compara. Renombrar el binario evita la detección:
-- `fiddler.exe` → `editor.exe`
-- `cmd.exe` → bloqueado por nombre. PowerShell (`powershell.exe`) no está en la lista.
-- `dnspy.exe` → `code_editor.exe`
-- `ida64.exe` → `analyzer.exe`
-- Discord: usar la versión web (discord.com) en vez del cliente de escritorio
+El chequeo es por substring REGEX en el título de ventana. Cambiar el título resuelve el problema:
 
-### Nota sobre `pizza`
-La detección de `pizza` por substring en ventanas/procesos sugiere que el AC
-está específicamente adaptado para detectar cheats populares de la comunidad L4D2.
+- **x32dbg / x96dbg:** Options → Preferences → GUI → cambiar título de ventana
+- **WinDbg:** `|0.writetitle "custom"` en la consola de WinDbg  
+- **Ghidra:** modificar el property `application.name` en `support/launch.properties`
+- **IDA Pro:** El patrón es `"ida -"` (con espacio-guión). Renombrar `ida64.exe` NO es suficiente.
+  Hay que evitar que el título de ventana contenga `"ida -"`. Opciones:
+  - Renombrar el archivo `.idb/.i64` a algo que no genere ese patrón
+  - Script IDA: modificar el título de ventana vía API Win32 al abrir
+  - Usar IDA en modo headless/batch (`-A -S script.idc`)
+
+### Para procesos (BL2, BL3, BL4)
+
+El nombre del ejecutable y/o el título de ventana es lo que se compara. Renombrar el binario evita:
+
+- `fiddler.exe` → `proxy_tool.exe` (evita substring "fiddler")
+- `dnspy.exe` → `code_view.exe` (evita "dnspy")
+- `gdb.exe` → `analyze.exe`
+- `Fiddler.exe` en título → cambiar a cualquier título sin "fiddler"
+
+### Para Browsers con overlay
+
+- **Discord:** usar discord.com en navegador web en lugar del cliente de escritorio
+- **Arc/Zen browser:** usar otro navegador sin overlay mientras el AC está activo
+- **Opera:** el proceso detectado es `Operacmd.exe` específicamente — el ejecutable principal
+  `opera.exe` no está en la lista
+
+### Entradas NO bypasseables solo con renombrar
+
+- `process`, `monitor`, `reverse`, `sharp` — son substrings genéricos. Si el nombre de
+  ventana del debugger contiene cualquiera de estas palabras, es detectado
+- `cef.pak` — detecta la presencia del archivo CEF en el sistema/proceso, no solo el nombre
+- `pizza` — detección de cheat VPK específico de L4D2
+
+### Nota sobre `od` (2 chars)
+
+Si es una entry real (incierto), cualquier proceso con "od" en el nombre sería detectado.
+Poco probable que genere false positives reales dado que la mayoría de herramientas
+comunes no contienen esa secuencia.
