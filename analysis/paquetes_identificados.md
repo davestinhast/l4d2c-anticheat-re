@@ -11,7 +11,8 @@ La identificación se realizó por análisis de métodos, campos y comportamient
 |-----------------|-------------|-----------|
 | `main.(*HpP4qwz)` | Struct principal de la app Wails | Métodos: Startup, FrontendReady, StartL4D2, ConnectL4D2Server, BeforeClose |
 | `dUgTofmw` | Motor de detección principal | 67 funciones, `ga4oovjHCfg` lanza 34 goroutines de detección |
-| `HWARRxN` | Paquete principal del AC (protocolo + HWID) | `KbBU6bdOa.Build` = constructor HWID, `MQI4Jn6aY2` = descriptor protobuf, `WPaeyWXKC3et` = MethodDescriptor gRPC |
+| `HWARRxN` | **`google.golang.org/protobuf/internal/filedesc`** — descriptor de archivo protobuf | `KbBU6bdOa.Build` = `filedesc.Builder.Build()`, `(*SLltHXdFZqty)` = FileDescriptor, `(*Yye7gKrP5)` = ServiceDescriptor (tiene `Methods()`), `(*WPaeyWXKC3et)` = MethodDescriptor (`Input`, `Output`, `IsStreamingClient`, `IsStreamingServer`), `(*Cv4Csm)` = MessageDescriptor, `(*TvQBJqp99aCj)` = FieldDescriptor |
+| `bszAWJqu` | **Subsistema de escaneo de blacklists** — escanea procesos, ventanas, módulos | 12 funciones top-level, usa 4 patrones regex compilados (uno por blacklist), funciones: `ThNOEr`, `OYQujSa6Aed5`, `FkjkBraZo`, `IvOAAX`, `ApxFkk`, `X10KDNt6j`, `LUb2wVKw`, `PlRmoX6cuU`, `CGKuSNjp`, `JnwG33U`, `E5nzMUH5qSwM`, `X80N6Rs52TTi` |
 | `P4mAKk` | Mensajes Protobuf del AC | 16 structs con campos Get*/Reset/String/ProtoReflect |
 | `x1JPPahi` | Contenedor de tipos de detección | Contiene ENOV9d, BiK8wj, W99qYP, Qi1Z8I, etc. |
 | `_6di6zc0se2v` | WatchList — vigilancia continua | Métodos Add, AddWith, Remove, WatchList, Close, Has |
@@ -41,11 +42,13 @@ La identificación se realizó por análisis de métodos, campos y comportamient
 |-----------------|-------------|-----------|
 | `i1aqCskEISkX` | `net/http` + `golang.org/x/net/http2` | HTTP/2 framer (WriteContinuation, WriteData, WriteHeaders, WriteSettings), HTTP transport (RoundTrip, CloseIdleConnections), Authenticate, BasicAuth, SetBasicAuth |
 | `gG7Vmb7` | Biblioteca de red UDP (300+ funciones) | Probablemente `github.com/pion/udp` o similar |
-| `hh58lo` | A2S Protocol (Source Engine server query) | 40+ funciones, campos json:"VAC", json:"SteamID", json:"Name", json:"Game", json:"AppID" |
+| `hh58lo` | Structs de respuesta A2S (campos JSON) | Tipos: `*hh58lo.Phr6ow`, `*hh58lo.GV2qnv`, `*hh58lo.Ea9gTx`, `*hh58lo.BT1E5g`, `*hh58lo.FnICOY`; campos json:"VAC", json:"SteamID", json:"Name", json:"Game", json:"AppID" |
+| `HBJGtL` | **Cliente A2S Protocol** (implementación del protocolo Source Engine server query) | `(*Ns0npSNFWWqQ).QueryInfo` = A2S_INFO, `(*Ns0npSNFWWqQ).QueryPlayer` = A2S_PLAYER, `(*Ns0npSNFWWqQ).Close`, `(*JG00Xm6lG8)` = lector binario (ReadUint8/16/32/64/String/Float32), `(*XxIkaC9_)` = escritor binario (WriteBytes/WriteCString), 11 funciones init |
 | `eUmM3IpzIrV` | Struct de respuesta A2S | Contiene `eaDzRhPGHK7j` con campos de servidor Source Engine |
 | `MyTTk7_I` | `crypto/tls` | `(*ExZca80).DecryptTicket/EncryptTicket/ResumptionState` = métodos de tls.SessionState |
 | `ExZca80` | `crypto/tls.SessionState` | DecryptTicket, EncryptTicket, ResumptionState |
-| `uL6SGHSpk` | `crypto/x509` | Manejo de certificados X.509/TLS |
+| `uL6SGHSpk` | **`crypto/x509/pkix`** — no x509 directamente | `(*JjZ1WNQA).FillFromRDNSequence/ToRDNSequence/String` = `pkix.Name`, `(*IBvuTjv).HasExpired` = `pkix.CertificateList.HasExpired` (verificación de CRL), `(*Ap8xj8SrB).String` = `pkix.AlgorithmIdentifier` |
+| `LYUqBZOV7RHi` | **`crypto/x509`** — manejo de certificados X.509 | `(*XdDiONjbzcM)` = `x509.CertPool` (AddCert, Clone, AppendCertsFromPEM, Equal), `(*ZIbJOWC4).CheckSignature` = `x509.Certificate`, 31 funciones init (registro de algoritmos RSA/ECDSA/DSA) |
 | `OwbnEHL7gtm` | `gopacket` / librería 802.11 | Métodos Bandwidth, ShortGI, GuardInterval, MCSIndex, FECType, ReportZerolen, IsZerolen, LastKnown, DelimCRCErr |
 
 ---
@@ -71,17 +74,26 @@ La identificación se realizó por análisis de métodos, campos y comportamient
 | `sNAkh4` | **Paquete de monitoreo de red propio del AC** — usa gopacket (`q4ajG0RM`) como dependencia | Tipos adyacentes a gopacket: `GrRzvM2` implementa `SetNetworkLayer`/`DecodeFromBytes`; `eeWJva_vkG` (arrays de 8 elementos, procesamiento por lotes), `cd1Utgxh0`, `gvBDt2BpBt7`, `wqT1oO`, `vaf3j0Z`, `ySbqKa9f0p`, `encTsS0_`. **CORRECCIÓN:** previamente identificado como gopsutil — incorrecto. El paquete gopsutil/v3/process real es `WvPUk5UlmHG` |
 | `WvPUk5UlmHG` | **`github.com/shirou/gopsutil/v3/process`** | Confirmado por `CmdlineWithContext`, `CmdlineSliceWithContext`, `NameWithContext`, `CreateTimeWithContext`, `CmdlineSlice`, `Name`. Struct principal: `(*USEy__R7Bor9)`. Métodos en tabla de tipos: `CPUPercent`, `CreateTime`, `Foreground`, `IOCounters`, `MemoryInfo`, `MemoryMaps`, `NumThreads`, `PageFaults`, `SendSignal`. Llamado directamente desde `dUgTofmw.rpfbMOh` para leer cmdline del proceso del juego |
 | `q4ajG0RM` | **`github.com/google/gopacket`** (biblioteca principal de captura de paquetes) | Métodos: `SetNetworkLayer`, `DecodeFromBytes`, `SetTransportLayer`, `SetApplicationLayer` — todas interfaces estándar de gopacket. Tipos: `Gt6tsVi`, `TXYGsDR`, `QOxXU6`, `Aa8DB2bIK66`, `UXODB2hYq`, `JorhuVUPZ`, `KAwWPEYU`, `DQcWKXdd`. Adyacente a `sNAkh4` en la tabla de tipos |
-| `aFzxJpzp2` | Implementación de hash (SHA256/HMAC) | Métodos BlockSize, Sum, Write, Reset |
-| `AFdc2Qd` | Operaciones de big number | `crypto/big` o similar |
+| `aFzxJpzp2` | **`crypto/hmac`** — HMAC implementation | `(*cESPyjL5y).ConstantTimeSum` (método exclusivo de `crypto/hmac`), `BlockSize`, `Size`, `Sum`, `Write`, `Reset`, `MarshalBinary`, `UnmarshalBinary` |
+| `PcTWfu` | **`crypto/aes`** — cifrado AES con AES-NI | `(*pAWn49)` = AES block cipher; `(*myqAnYT)` = AES-GCM; `(*pRzjXqs)`, `(*gU1WIgp)` = modos CBC/CFB; funciones ensamblador: `_expand_key_128/192a/192b/256a/256b` |
+| `pa9q8q` | Cifrado de bloque adicional (posiblemente `crypto/des` o `golang.org/x/crypto`) | `(*pXyC3Ai).BlockSize/Encrypt/Decrypt`, `(*lPQ6ELOmD).BlockSize/Encrypt/Decrypt` — estructura similar a crypto/des o chacha20 |
+| `AFdc2Qd` | **`math/big`** — aritmética de grandes números | Usado por RSA key operations en x509/TLS |
 | `aOD4q1Y` | Protobuf registry/descriptor | Registro de tipos proto |
 | `Ve0nLKBMzmC` | `github.com/go-playground/validator/v10` | `(*adPnywIlKf75)`: Field, GetTag, ExtractType, Param, Parent, Top, ReportError, ReportValidationErrors, Validator |
-| `ncRaYk_Ke` | **`regexp` o `regexp/syntax`** (stdlib Go) | `MatchRune` method identificado en tabla de tipos — `regexp/syntax.Inst.MatchRune` es el único método con ese nombre en stdlib. Funciones: `FS0IhhJL`, `MDfyjAe`, `RaR0kkqIl`, `MlPMSGX2GAB`, `Alav9s`, `T8Go8QdJaY`, `PJRLzfZ`. El AC compila regex para matching de blacklists |
-| `bmV09O0` | Protobuf interno | Encontrado en contexto de serialización protobuf; posiblemente `google.golang.org/protobuf/internal` |
-| `fcje4l4dl_uV` | Tipo del pipeline productor-consumidor de dUgTofmw | Método `Feed` identificado — recibe datos de goroutines productoras |
-| `bszAWJqu` | Paquete AC desconocido — posiblemente sistema de eventos/detección | Funciones: `FkjkBraZo` (15 closures + deferwrap), `IvOAAX` (aparece en FrontendReady context), `OYQujSa6Aed5`, `ApxFkk`, `X10KDNt6j`. Usa regexp (`ncRaYk_Ke`). Podría ser el sistema de escaneo de procesos/ventanas |
-| `d8a0oX50i` | Paquete con aritmética de big numbers | Aparece junto a `math/big.PhCJi5OjhM2` en pclntab. Funciones: `ZhDr99uMy`, `QqEcxnsa`, `FLPyhrKfoTu`. Probablemente crypto: generación de tokens o HMAC usando `math/big` |
-| `Plcr2cx` | Paquete adyacente a d8a0oX50i | Funciones: `CgWgrWQ`, `rHQg4df6V`, `hEQiyR8`. Posiblemente manejo de claves o certificados |
-| `i7OyDUpCDA3q` | Paquete inlined en main.QSUMsCa | Función `D5UnAj` identificada; aparece entre funciones de ncRaYk_Ke sugiriendo que es un helper de matching o comparación |
+| `ncRaYk_Ke` | **`regexp` + `regexp/syntax`** (stdlib Go) | `MatchRune` = `regexp/syntax.Inst.MatchRune`; Funciones compiladoras: `MlPMSGX2GAB`, `Alav9s`, `T8Go8QdJaY`, `PJRLzfZ`, `IvOAAX`, `FS0IhhJL`, `MDfyjAe`, `RaR0kkqIl`. Usadas por `bszAWJqu` para compilar y ejecutar las 4 blacklists contra ventanas/procesos |
+| `bmV09O0` | Protobuf interno | Contexto de serialización protobuf; posiblemente `google.golang.org/protobuf/internal` |
+| `fcje4l4dl_uV` | Pipeline productor-consumidor de dUgTofmw | Método `Feed` — recibe datos de goroutines productoras para procesamiento centralizado |
+| `d8a0oX50i` | Paquete crypto del AC (generación de tokens) | Aparece con `math/big` en pclntab. Funciones: `ZhDr99uMy`, `QqEcxnsa`, `FLPyhrKfoTu`. Probable: generación de tokens de sesión o HMAC-SHA256 para autenticación |
+| `Plcr2cx` | Paquete crypto adyacente a d8a0oX50i | Funciones: `CgWgrWQ`, `rHQg4df6V`, `hEQiyR8`. Posiblemente: manejo de claves públicas/privadas o derivación de claves |
+| `i7OyDUpCDA3q` | Helper de comparación/matching | Función `D5UnAj`; aparece entre funciones de `ncRaYk_Ke` sugiriendo helper de matching de strings o bytes |
+| `Pyp7aGakY` | Tipo `OrderedSet` (lista con deduplicación) | `(*DSNcSHSTN)`: Add, AddUnique, Contains, AddSlice, AsSlice, AddSlicer, Filter, Each, Length, Clear, Deduplicate, Join, Sort — implementación de conjunto ordenado usada para acumular resultados de detección |
+| `HBJGtL` | **Cliente A2S protocol** (Query Source Engine) | `(*Ns0npSNFWWqQ)` = struct del cliente; `QueryInfo`, `QueryPlayer`, `Close`; `(*JG00Xm6lG8)` = lector binario; `(*XxIkaC9_)` = escritor binario; 11 inits |
+| `D9eGQ5PG` | Biblioteca UDP / transporte de red | Struct genérico `{uint16; uint8}` = packet header; `(*P61aMY8x9u_r).Error` = error type; funciones genéricas `ge3tkaLtE.*` |
+| `Lvy2smJECjF` | **`math/rand`** | `(*J3sgRye).ExpFloat64`, `(*J3sgRye).Uint32` = generación de números pseudoaleatorios |
+| `sa96sWj2YdO` | **`crypto/rand`** o `math/rand v2` | `(*j2se_tz1Yd).Uint64`, `(*V_IwguYI).Uint64` — generación de uint64 aleatorio |
+| `Lvy2smJECjF` | **`math/rand`** | `(*J3sgRye).ExpFloat64`, `(*J3sgRye).Uint32` = generación de números pseudoaleatorios |
+| `J4pbxzDN6T` | Paquete helper pequeño | Funciones: `JxJlCi2H` (func1), `psK3gqUeJD` (func1, func2) — muy pequeño, probablemente wrapper o utility |
+| `i7OyDUpCDA3q` | Helper de comparación/matching | Función `D5UnAj`; aparece entre funciones de `ncRaYk_Ke` |
 
 ---
 
