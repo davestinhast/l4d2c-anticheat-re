@@ -24,7 +24,9 @@ de detección del AC. Basado 100% en análisis estático del binario.
 | Blacklist de herramientas RE | Mover herramientas al VM | Fácil |
 | Anti-debugger (WMI PerfOS) | Depuración remota / kernel en VM | Muy Alta |
 | Integridad de archivos VPK | No modificar VPKs en addons | Fácil |
-| Certificate pinning | Parchear offset 0x2A3E4B3 o hook TLS | Alta |
+| Certificate pinning | Parchear offset 0x2A3E4B3 o hook `MyTTk7_I.(*A0lMBv6KYzU_).Read` (tls.Conn) | Alta |
+| Captura de paquetes (gopacket/pcap) | VM con NIC virtualizada / deshabilitar NPCAP | Muy Alta |
+| Scanner Source Engine (ConVars) | Hook `ReadProcessMemory` o mantener ConVars limpias | Media |
 
 ---
 
@@ -555,6 +557,70 @@ El servidor puede rechazar conexiones con VPKs de cheats conocidos.
 
 ---
 
+## Vector 15 — Bypass de Captura de Paquetes en Vivo (gopacket/pcap)
+
+**Cómo funciona la detección:**
+El AC usa `github.com/google/gopacket/pcap` (paquete `gG7Vmb7`, 452 funciones) para captura
+de paquetes en tiempo real desde la interfaz de red. El paquete `uaIqvkWry1B` (gopacket core,
+203 funciones) decodifica los paquetes capturados por capas (Link, Network, Transport).
+
+Esto opera a nivel más bajo que socket-level monitoring — ve el raw traffic antes de que
+llegue a los sockets de la aplicación.
+
+**Qué puede detectar:**
+- Proxies locales que interceptan tráfico del juego
+- Modificación de paquetes UDP del Source Engine (network hacks)
+- Presencia de adaptadores de red virtuales (VPN, TUN/TAP)
+- Tráfico hacia IPs conocidas de proveedores de cheats
+
+**Bypass — Opción A: VM con adaptador de red virtualizado**
+```
+Host: AC + left4dead2.exe corren en VM Guest
+Guest: El pcap solo ve el adaptador virtual (e1000/virtio)
+El tráfico real entre Guest y Host es manejado por el hipervisor
+
+Resultado: El AC captura paquetes del adaptador virtual, no del real.
+Si el cheat server está en el Host, el tráfico no es visible por pcap en el Guest.
+```
+
+**Bypass — Opción B: Kernel driver que oculta interfaz de red**
+Interceptar las llamadas `pcap_open_live` / `DeviceIoControl` hacia `\Device\NPF_*`
+(NPCAP driver) para retornar sin datos o con tráfico filtrado. Requiere driver propio.
+
+**Bypass — Opción C: Deshabilitar NPCAP/WinPcap**
+Sin la biblioteca NPCAP instalada, `pcap_open_live` falla. El AC probablemente maneja
+este caso graciosamente (no crash), simplemente sin captura de paquetes.
+
+**Nota:** Este es el vector más invasivo del AC. Opera debajo del nivel de aplicación.
+Para bypass confiable, la VM es la única solución no invasiva.
+
+---
+
+## Bypass del TLS — Mapeo de Tipos Confirmado (crypto/tls)
+
+Ahora que `MyTTk7_I` = `crypto/tls` está confirmado, las funciones exactas para hookear son:
+
+```
+MyTTk7_I.(*A0lMBv6KYzU_).Read    = crypto/tls.(*Conn).Read
+MyTTk7_I.(*A0lMBv6KYzU_).Write   = crypto/tls.(*Conn).Write
+MyTTk7_I.(*ExZca80).SetSessionTicketKeys = crypto/tls.(*Config).SetSessionTicketKeys
+```
+
+Para bypass del certificate pinning via hook interno:
+
+```cpp
+// Usar GoReSym o la pclntab para encontrar dirección de:
+// MyTTk7_I.(*A0lMBv6KYzU_).Read  →  el Hook más útil para captura
+
+// Con la dirección encontrada, instalar IAT/inline hook
+// y volcar todos los datos leídos (plaintext post-TLS-decrypt)
+```
+
+La verificación de certificado probablemente ocurre dentro de `_ZyRwtuuaU.vdBoClcqZRtE`
+(función con 12 closures en MyTTk7_I) — probablemente el TLS handshake completo.
+
+---
+
 ## Plan de Acción para Bypass Completo
 
 Para un bypass completo del sistema sin kernel drivers:
@@ -579,6 +645,10 @@ Paso 4: Herramientas de análisis en VM separada
 Paso 5: Proxying para análisis (SEPARADO del juego)
   → Solo para investigación del protocolo
   → Nunca mientras se conecta a un servidor del AC
+
+Paso 6: Considerar captura de paquetes (Vector 15)
+  → Si se analiza tráfico, usar VM para aislar el pcap del AC
+  → NPCAP desinstalado en el sistema target reduce el riesgo
 ```
 
 ---

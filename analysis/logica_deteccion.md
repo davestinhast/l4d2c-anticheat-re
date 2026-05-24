@@ -346,6 +346,57 @@ Para descubrirlas se necesita:
 
 ---
 
+## Vector 15 — Captura de Paquetes en Vivo (gopacket/pcap + gopacket core)
+
+Confirmado por identificación de:
+- `gG7Vmb7` = `gopacket/pcap` (452 funciones, `WritePacketData` confirmado)
+- `uaIqvkWry1B` = `gopacket` core (203 funciones, `PacketSource`, `Packet`, `Flow`, `Endpoint`)
+- `q4ajG0RM` = gopacket (type table name)
+
+El AC captura y decodifica tráfico de red **en vivo desde la interfaz de red del sistema**,
+no solo analiza conexiones establecidas. Esto incluye:
+
+```
+1. gopacket/pcap.OpenLive()  — captura raw packets desde NIC
+2. gopacket.PacketSource.Packets()  — goroutine de paquetes
+3. gopacket.Packet.{LinkLayer, NetworkLayer, TransportLayer}  — decode por capa
+4. sNAkh4 / _6di6zc0se2v  — procesa los paquetes capturados
+```
+
+### Qué Detecta con Captura de Paquetes
+
+- **Proxies locales** — conexiones a `127.0.0.1:PORT` que interceptan tráfico del juego
+- **Traffic injection** — paquetes enviados al servidor que no pasan por el cliente real  
+- **Packet manipulation** — modificación de paquetes del juego en tránsito
+- **VPN/tunneling** — presencia de interfaces virtuales (TUN/TAP)
+- **Cheat server communication** — tráfico hacia IPs conocidas de proveedores de cheats
+
+### Impacto en Bypass
+
+Este es el vector **más invasivo** del AC. Está por encima del nivel de aplicación —
+opera a nivel de driver de red. No puede ser evadido con hooks en `send()`/`recv()`.
+
+**Bypass posible:** VM con adaptador de red virtualizados donde el AC no tiene
+acceso al pcap del tráfico real. El AC solo puede capturar lo que ve el adapter
+que monitorea.
+
+---
+
+## Paquetes Stdlib Identificados con Rol en Detección
+
+Paquetes de librería estándar con impacto directo en los vectores de detección:
+
+| Paquete | Real | Rol |
+|---------|------|-----|
+| `MyTTk7_I` | `crypto/tls` (969 func) | TLS 1.3 para gRPC + cert pinning (`ExZca80` = `tls.Config`, `A0lMBv6KYzU_` = `tls.Conn`) |
+| `f3SkGnYxZwK` | `time` (522 func) | Timing de todos los loops de detección (`NOZFARjOV` = `time.Now()`) |
+| `pa9q8q` | `crypto/des` (42 func) | Posible cifrado adicional para HWID o session tokens |
+| `gF8Cxkh_m` | `bytes` (316 func) | Buffer de bytes para scan de memoria y procesamiento de paquetes |
+| `lAEmxoi9bxt` | `strings` (138 func) | Manipulación de strings en matching de blacklists |
+| `uaIqvkWry1B` | `gopacket` core (203 func) | Parsing y decodificación de paquetes capturados por pcap |
+
+---
+
 ## Tiempos Estimados de los Checks
 
 | Vector de detección | Intervalo estimado |
@@ -355,6 +406,8 @@ Para descubrirlas se necesita:
 | Scan de memoria (CheatSigs) | ~60 segundos (costoso) |
 | Screenshot | ~120 segundos (posiblemente aleatorio) |
 | Módulos del juego | Continuo (event-based) |
+| Captura de paquetes (pcap) | Continuo (live capture) |
+| Scanner Source Engine (ConVars) | ~30-60 segundos (estimado) |
 | HWID (initial) | Una sola vez al conectar |
 
 Estos son estimados — no confirmados sin análisis dinámico.
