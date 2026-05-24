@@ -251,6 +251,55 @@ El AC compara estos datos con lo que el jugador reporta para detectar inconsiste
 
 ---
 
+## Vector 13 — Anti-Debugger via Win32_PerfFormattedData_PerfOS_System
+
+Este vector es **inusual** para un anticheat de videojuego. El AC consulta via WMI la clase
+`Win32_PerfFormattedData_PerfOS_System` para detectar la presencia de debuggers activos
+por el impacto que tienen en el sistema (overhead de CPU y context switches).
+
+### Campos de interés
+
+```
+ProcessorQueueLength    — número de threads en cola esperando CPU
+                          Normal: 0-2
+                          Con debugger activo: 5-20+ (el debugger causa stalls)
+
+ContextSwitchesPersec   — context switches por segundo del sistema entero
+                          Normal: ~1000-5000/s
+                          Con debugger: 10000+/s (el debugger genera cambios de contexto constantes)
+
+SystemCallsPersec       — system calls por segundo
+                          Similar: debuggers aumentan significativamente
+```
+
+### Cómo detecta debuggers
+
+```
+1. WMI: SELECT ProcessorQueueLength,ContextSwitchesPersec
+        FROM Win32_PerfFormattedData_PerfOS_System
+
+2. Si ProcessorQueueLength > THRESHOLD  → sospechoso
+   Si ContextSwitchesPersec > THRESHOLD → sospechoso
+
+3. Este check detecta:
+   - x64dbg / x32dbg con breakpoints activos
+   - WinDbg en modo user-space
+   - OllyDbg con plugins activos
+   - Cualquier debugger que causa pause/resume constante
+```
+
+### Por qué es difícil de evadir
+
+A diferencia de los checks clásicos de debugger (`IsDebuggerPresent`, `CheckRemoteDebuggerPresent`),
+este método mide el **efecto colateral** del debugger en el sistema, no su presencia directa.
+No se puede patchear fácilmente porque es una observación del comportamiento del OS.
+
+**Bypass:** Usar el debugger en un sistema con poca carga (sin otras apps), o depurar
+remotamente (el sistema analizado no tiene el debugger local). La depuración kernel
+(WinDbg kernel + VM) no genera overhead en el sistema target.
+
+---
+
 ## Paquete VKiZI7 — Aclaración
 
 **VKiZI7 NO es detección de procesos.** Es el paquete de integración con WebView2 (Chromium embebido para la UI de Wails). Los métodos como `ProcessFailed`, `AddRef`, `Release` son parte de la interfaz COM de WebView2.
