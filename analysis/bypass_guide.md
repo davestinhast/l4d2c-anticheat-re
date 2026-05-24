@@ -22,6 +22,9 @@ de detección del AC. Basado 100% en análisis estático del binario.
 | A2S server query | Coincide con datos reales | N/A |
 | Anti-smurf (InstallDate) | Dificil sin análisis dinámico | Alta |
 | Blacklist de herramientas RE | Mover herramientas al VM | Fácil |
+| Anti-debugger (WMI PerfOS) | Depuración remota / kernel en VM | Muy Alta |
+| Integridad de archivos VPK | No modificar VPKs en addons | Fácil |
+| Certificate pinning | Parchear offset 0x2A3E4B3 o hook TLS | Alta |
 
 ---
 
@@ -160,12 +163,15 @@ Este es el vector más importante para evitar bans por hardware.
 
 **Cómo funciona la detección:**
 ```
-HWARRxN.(*KbBU6bdOa).Build:
-  WMI Win32_Processor     → ProcessorId
+asYMlWeBL6f6.Aego3YEweIaU (WMI collector):
+  WMI Win32_Processor     → ProcessorId, MaxClockSpeed
   WMI Win32_DiskDrive     → SerialNumber, Model
   WMI Win32_BaseBoard     → SerialNumber, Model
   WMI Win32_VideoController → PNPDeviceID, Name
-  WMI Win32_OperatingSystem → BuildNumber, Version
+  WMI Win32_OperatingSystem → InstallDate, BuildNumber, Version
+
+Nota: HWARRxN.(*KbBU6bdOa).Build es el runtime de protobuf (MessageInfo.Build),
+NO el HWID builder. El collector real es asYMlWeBL6f6.Aego3YEweIaU.
 ```
 
 **Bypass — Hook del ExecQuery de IWbemServices:**
@@ -284,19 +290,63 @@ start dnspy ilspy ILSpy pizza crack ida -brute james Debug
 
 Para capturar el tráfico entre el AC y el servidor sin que el AC lo detecte:
 
-### Método 1 — Burp Suite / Fiddler (Sin Certificate Pinning)
+### Certificate Pinning — BLOQUEANTE
 
-El análisis estático **no detectó certificate pinning**. El AC usa el store de
-certificados de Windows. Por lo tanto Burp/Fiddler funciona:
+El AC implementa **certificate pinning completo**. El certificado de `l4d2center.com`
+está hardcodeado en el binario:
 
 ```
-1. Abrir Burp Suite
-2. Proxy → Options → Export CA cert como DER
-3. Importar en Windows: certlm.msc → Autoridades de certificación raíz de confianza → Importar
-4. Configurar proxy del sistema: Settings → Network → Proxy → Manual: 127.0.0.1:8080
-5. Lanzar l4d2c_anticheat.exe
-6. En Burp: HTTP History → ver requests a l4d2center.com
-7. El body de cada request son bytes protobuf — decodificar con proto/esquema.proto
+Subject:  https://l4d2center.com/0
+Issuer:   DigiCert Trusted G4 RSA4096 SHA256 2024 CA1
+Offset:   0x2A3E4B3 (decimal 44213139)
+```
+
+El AC verifica que el cert del servidor sea exactamente ese, ignorando el store de
+certificados de Windows. Burp Suite / Fiddler **NO funcionan** directamente.
+
+### Método 1 — Parchear el Certificate Pinning en el Binario
+
+```
+1. Abrir el binario en Ghidra
+2. Ir al offset 0x2A3E4B3 — localizar el certificado DER hardcodeado
+3. Reemplazar el cert con el cert de la CA de Burp Suite (mismo tamaño o parchear referencias)
+4. Ajustar la longitud del cert en la instrucción que pasa el slice a x509.AddCert
+5. Ahora el AC aceptará el cert de Burp como válido
+```
+
+**Alternativa**: Hookear `crypto/tls.(*Conn).VerifyHostname` o la función que compara
+el certificado para que siempre retorne `nil` (sin error).
+
+### Método 2 — Hook Interno del TLS (Sin parchear el binario)
+
+Para evitar que el AC detecte el proxy, hookear `crypto/tls` dentro del proceso:
+
+```cpp
+// En Ghidra + GoReSym: encontrar la dirección de
+// crypto/tls.(*Conn).Write y crypto/tls.(*Conn).Read
+
+// Hook crypto/tls.(*Conn).Write para capturar plaintext antes de encriptar
+int64_t HOOK_tls_write(void* conn, struct GoSlice* slice, ...) {
+    // Volcar el plaintext
+    DumpToFile("tls_out.bin", slice->data, slice->len);
+    return original_tls_write(conn, slice, ...);
+}
+
+// Hook crypto/tls.(*Conn).Read para capturar respuestas del servidor
+```
+
+**Ventaja**: Captura el plaintext ANTES del cifrado TLS — el certificate pinning
+no importa porque el hook intercepta después de que TLS ya estableció la conexión.
+
+### Método 3 — Redirigir DNS + Servidor Propio (Requiere bypass de pinning)
+
+```
+1. Editar C:\Windows\System32\drivers\etc\hosts:
+   127.0.0.1  l4d2center.com
+
+2. Parchear cert en binario (Método 1) O hookear la verificación
+3. Levantar servidor gRPC local que implemente el protocolo
+4. El AC conecta al servidor local → logear todo → reenviar al real (si aplica)
 ```
 
 **ADVERTENCIA:** El AC monitorea las conexiones del proceso `left4dead2.exe`.
@@ -350,6 +400,123 @@ Para un cheat que corre como proceso separado (externo al juego):
 
 **El AC usa `ReadProcessMemory` para escanear el juego** desde su propio proceso.
 Un cheat externo que usa la misma API no es más detectable que el AC mismo.
+
+---
+
+## Vector 13 — Bypass del Anti-Debugger (Win32_PerfFormattedData_PerfOS_System)
+
+Este es el vector de anti-debug más difícil de evadir del AC. A diferencia de
+`IsDebuggerPresent` o `CheckRemoteDebuggerPresent`, este método no mide la
+**presencia** del debugger — mide su **efecto colateral** en el sistema.
+
+**Cómo funciona la detección:**
+```
+WMI: SELECT ProcessorQueueLength, ContextSwitchesPersec
+     FROM Win32_PerfFormattedData_PerfOS_System
+
+Si ProcessorQueueLength > THRESHOLD:   → sospechoso (debugger activo causa stalls)
+Si ContextSwitchesPersec > THRESHOLD:  → sospechoso (debugger genera context switches)
+```
+
+Valores normales vs. con debugger activo:
+| Métrica | Sistema limpio | Con x64dbg + breakpoints |
+|---------|---------------|--------------------------|
+| ProcessorQueueLength | 0-2 | 5-20+ |
+| ContextSwitchesPersec | 1000-5000 | 10000+ |
+
+**Por qué `IsDebuggerPresent = false` no ayuda:**
+El AC NO usa `IsDebuggerPresent`. Parchear esa API no tiene ningún efecto en este vector.
+
+**Bypass — Opción A: Sistema con poca carga**
+Si el sistema tiene muy pocos procesos corriendo y el debugger usa los breakpoints
+con moderación, las métricas pueden mantenerse en rangos normales. Poco confiable.
+
+**Bypass — Opción B: Depuración remota (RECOMENDADA)**
+
+```
+Setup:
+  Máquina A (Target): Corre left4dead2.exe + l4d2c_anticheat.exe
+                      El AC solo ve las métricas de la Máquina A — limpia
+  
+  Máquina B (Debugger): Corre x64dbg / WinDbg con conexión remota a Máquina A
+                        Todo el overhead del debugger ocurre en Máquina B
+                        
+Configuración:
+  1. En Máquina A: levantar dbgsrv.exe (Windows Debugging Server)
+     C:\dbgsrv.exe -t tcp:port=1234
+  2. En Máquina B: conectar WinDbg remotamente
+     File → Connect to Remote Debugging Session: tcp:server=<IP_A>,port=1234
+  3. El proceso del juego en Máquina A no tiene debugger LOCAL — las métricas WMI son normales
+```
+
+**Bypass — Opción C: Depuración Kernel via VM (MEJOR PARA ANÁLISIS PROFUNDO)**
+
+```
+Setup:
+  Host (Debugger): WinDbg con extensión KDNET
+  Guest VM (Target): Windows 11 + left4dead2.exe + AC
+  
+  Configuración:
+  1. En VM: habilitar debugging de kernel
+     bcdedit /debug on
+     bcdedit /dbgsettings net hostip:<IP_HOST> port:50000
+  2. En Host: WinDbg conecta a través de red
+     File → Attach to kernel → Net: port=50000
+
+Resultado: El kernel debugger opera a nivel de hipervisor.
+La VM (donde corre el AC) no tiene overhead de debugger a nivel de OS.
+Las métricas WMI del guest son 100% normales.
+```
+
+**Bypass — Opción D: Hookear la Query WMI**
+
+```cpp
+// El AC hace ExecQuery con Win32_PerfFormattedData_PerfOS_System
+// Hookear IWbemServices::ExecQuery para interceptar esta query específica
+
+HRESULT STDMETHODCALLTYPE Hook_ExecQuery(..., const BSTR strQuery, ...) {
+    if (wcsstr(strQuery, L"Win32_PerfFormattedData_PerfOS_System")) {
+        // Retornar valores falsos: ProcessorQueueLength=0, ContextSwitchesPersec=1500
+        return ReturnFakePerfData(ppEnum);
+    }
+    return original_ExecQuery(pThis, strQueryLanguage, strQuery, lFlags, pCtx, ppEnum);
+}
+```
+
+**Conclusión:** Para análisis del AC, usar **Opción B o C**. La depuración remota o
+en VM elimina completamente el efecto colateral del debugger en la máquina target.
+
+---
+
+## Vector 14 — Bypass de Integridad de Archivos (Hash de VPKs)
+
+**Cómo funciona la detección:**
+El paquete `BhCuafOD` (hash 64-bit, probablemente FNV-1a o xxhash) calcula hashes
+de los archivos `.vpk` en el directorio de addons del juego. El servidor compara
+estos hashes contra una lista de hashes conocidos de cheats.
+
+El struct `BiK8wj` del protocolo protobuf reporta:
+```protobuf
+message BiK8wj {
+    string Path = ?;  // ruta del archivo VPK
+    int64  Size = ?;  // tamaño en bytes
+}
+```
+
+El AC escanea el sistema de archivos vía `ge3tkaLtE` (path/filepath) y `ux88b3Kaxj2` (io/fs).
+
+**Bypass:**
+
+1. **No tener VPKs de cheats durante el juego** — método más simple
+2. **Renombrar el VPK** — el servidor probablemente busca por hash, no por nombre
+3. **Modificar el VPK** — cambiar un byte del archivo cambia el hash FNV-1a/xxhash
+   completamente (efecto avalancha). Si el servidor verifica por hash, un VPK levemente
+   modificado no haría match con el hash conocido del cheat
+4. **Hook del paquete de hash** — hookear `BhCuafOD.(*BDap2x).Sum64` para retornar
+   hashes aleatorios, haciendo que el servidor no pueda identificar ningún VPK
+
+**Nota:** El campo `Size` también se reporta — un VPK modificado puede cambiar de
+tamaño si se añaden/eliminan bytes. Mantener el mismo tamaño si se modifica el contenido.
 
 ---
 
