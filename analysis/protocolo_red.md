@@ -172,6 +172,94 @@ Este método permite análisis completo del protocolo sin hooking.
 
 ---
 
+## Certificados Authenticode Embebidos
+
+El binario está firmado digitalmente con dos certificados auto-firmados de L4D2Center
+ubicados en el Security Directory del PE (offset 0x2ACA400, tamaño 0x2480).
+
+**Certificado Root CA (10 años):**
+```
+Sujeto:   CN=L4D2Center
+Válido:   2026-02-15 19:53:48 → 2036-02-13 19:53:48 UTC
+Tipo:     RSA (OID 1.2.840.113549.1.1.1)
+```
+
+**Certificado Hoja (~2.3 años):**
+```
+Sujeto:   CN=L4D2Center
+Válido:   2026-02-15 19:54:17 → 2028-05-20 19:54:17 UTC
+Tipo:     RSA
+```
+
+Efecto: Windows muestra "Editor verificado: L4D2Center" en el diálogo UAC.
+No produce advertencias de SmartScreen.
+
+---
+
+## DLLs Cargadas Dinámicamente
+
+| DLL | Uso |
+|-----|-----|
+| `kernel32.dll` | Estática (en IAT) |
+| `ntdll.dll` | Runtime de Go |
+| `winmm.dll` | Timers de alta precisión |
+| `ole32.dll` | COM / WMI (CoCreateInstance) |
+| `pdh.dll` | Performance counters (gopsutil CPU monitoring) |
+
+---
+
+## APIs de Windows Cargadas por Ordinal (MustFindProcByOrdinal)
+
+Estas APIs NO aparecen como strings en el binario — se cargan por número de ordinal:
+```
+ReadProcessMemory
+OpenProcess
+CreateToolhelp32Snapshot
+Process32First / Process32Next
+Module32First / Module32Next
+EnumWindows / GetWindowTextW
+DeviceIoControl
+BitBlt / PatBlt / GetDC
+CreateCompatibleDC / CreateCompatibleBitmap
+RegOpenKeyEx / RegQueryValueEx / RegCloseKey
+CoInitializeEx / CoCreateInstance
+```
+
+Para el bypass: hookear `GetProcAddress` no sirve para estas APIs.
+Hay que hookear la función directamente por dirección en memoria.
+
+---
+
+## WMI — Paquete asYMlWeBL6f6
+
+El paquete WMI tiene 24 funciones de inicialización (init.func1 a init.func24):
+```
+asYMlWeBL6f6.WbemeDk0     — IWbemServices o WbemLocator
+asYMlWeBL6f6.VDjfdjV      — tipo WMI adicional
+asYMlWeBL6f6.Aego3YEweIaU — función principal de query
+```
+
+Intercepción del ExecQuery para bypass de HWID:
+```cpp
+// Offset del método ExecQuery en la vtable de IWbemServices = 20
+void** vtable = *(void***)pServices;
+typedef HRESULT (*ExecQuery_t)(IWbemServices*, BSTR, BSTR, LONG, IWbemContext*, IEnumWbemClassObject**);
+ExecQuery_t original = (ExecQuery_t)vtable[20];
+vtable[20] = (void*)my_ExecQuery_hook;
+```
+
+---
+
+## Capturas de Pantalla — Formato PNG
+
+Confirmado que las capturas se codifican como **PNG** via Go's `image/png`:
+- Color model: `NRGBA` (Normal RGBA)
+- Chunks identificados: `IHDR`, `PLTE`, `tRNS`, `IDAT`, `IEND`
+- Se envían en el campo `Data` (campo 8) de `BEt_icchsrxy`
+- Frecuencia: ~120 segundos (posiblemente aleatorio)
+
+---
+
 ## Replay Attack para Investigar Condiciones de Ban
 
 Una vez capturado el tráfico:
